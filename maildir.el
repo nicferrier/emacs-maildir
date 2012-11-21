@@ -279,12 +279,18 @@ Each value is a number."
   (interactive
    (list
     (plist-get (text-properties-at (point)) :filename)))
-  (save-excursion
-    (goto-char (line-beginning-position))
-    (let ((kill-whole-line t)
-          (buffer-read-only nil))
-      (kill-line)))
-  (delete-file filename))
+  (let ((p (point))
+        (l (line-beginning-position)))
+    (save-excursion
+      (goto-char l)
+      (let ((kill-whole-line t)
+            (buffer-read-only nil))
+        (kill-line)))
+    (let ((new-point (+ (point) (- p l))))
+      (if (> new-point (line-end-position))
+          (goto-char (line-end-position))
+          (goto-char new-point)))
+    (delete-file filename)))
 
 (defun maildir-open (filename)
   "Open the specified FILENAME."
