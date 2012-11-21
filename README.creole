@@ -1,0 +1,15 @@
+This is a maildir based mail user agent. The basic idea is:
+
+* you pull new files from a remote MTA's maildir with SSH/rsync
+** requires that you can run shell commands at the remote MTA
+* Emacs manages the local maildir using a cache directory
+
+The maildir flow looks like this:
+
+* the command //maildir-pull// - pulls any new files from the remote ssh in your maildir //new//
+* //maildir-import-new// - is automatically run by //maildir-pull//
+** it pulls files from //new// into the local cache
+** and symlinks them to //cur//
+
+Finally, you can use the command //maildir-list// to generte a buffer
+with a listing of your current maildir in.
