@@ -304,6 +304,12 @@ Each value is a number."
   (interactive)
   (kill-buffer))
 
+(defun maildir-refresh ()
+  "Refresh the maildir."
+  (interactive)
+  (maildir-pull)
+  (maildir-list t))
+
 (define-derived-mode maildir-mode nil "Maildir"
   "Major mode for using maildirs.
 
@@ -315,6 +321,7 @@ Each value is a number."
 (define-key maildir-mode-map "\r" 'maildir-open)
 (define-key maildir-mode-map "d" 'maildir-rm)
 (define-key maildir-mode-map "q" 'maildir-quit)
+(define-key maildir-mode-map "r" 'maildir-refresh)
 
 (defun maildir-list (&optional clear)
   (interactive)
