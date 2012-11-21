@@ -29,14 +29,35 @@
 (require 'ietf-drums)
 (require 'cl)
 
+(defgroup maildir nil
+  "The Maildir mail user agent application."
+  :group 'applications)
+
 (defcustom maildir-default-index-field-syms
   '(to from date subject)
   "The default list of field symbols for the indexer."
   :group 'maildir
   :type 'sexp)
 
+(defcustom maildir-mail-dir ""
+  "The location of the Maildir you want to use."
+  :group 'maildir
+  :type 'directory)
 
-(defconst maildir/mail-dir "~/mymaildir/var/maildir/nferrier")
+(defcustom maildir-remote-host ""
+  "The host to connect to to find emails."
+  :group 'maildir
+  :type 'string)
+
+(defcustom maildir-remote-maildir ""
+  "The host to connect to to find emails."
+  :group 'maildir
+  :type 'string)
+
+(defcustom maildir-remote-days 5
+  "The number of days to check on the remote, for new emails."
+  :group 'maildir
+  :type 'integer)
 
 (defun maildir-log (data)
   (with-current-buffer (get-buffer-create "*maildir-log*")
@@ -111,7 +132,7 @@ changes the value in some way."
 
 (defun maildir-import-new (mail-dir)
   "Scan the maildir/new directory and import stuff."
-  (interactive (list maildir/mail-dir))
+  (interactive (list maildir-mail-dir))
   (let ((new (maildir/home mail-dir "new"))
         (cache (maildir/home mail-dir "cache"))
         (cur (maildir/home mail-dir "cur")))
@@ -135,14 +156,15 @@ changes the value in some way."
 (defun maildir-pull ()
   "Just memorize what we did for now."
   (interactive)
-  (let* ((maildir maildir/mail-dir)
+  (let* ((maildir maildir-mail-dir)
          (filelist (split-string
                     ;; Would prefer to do this async
                     (shell-command-to-string
-                     (concat
-                      "ssh po1.ferrier "
-                      ;; FIXME doesn't find just new - needs to.
-                      "find /var/maildir/nferrier/ -type f -ctime -1"))
+                     ;; FIXME doesn't find just new - needs to.
+                     (format "ssh %s find %s  -type f -ctime -%d"
+                      maildir-remote-host
+                      (file-name-as-directory maildir-remote-maildir)
+                      maildir-remote-days))
                     "\n"))
          (new-mails
           ;; Produces the list of files we don't have in the maildir's cache
@@ -271,30 +293,39 @@ Each value is a number."
     (plist-get (text-properties-at (point)) :filename)))
   (find-file filename))
 
+(defun maildir-quit ()
+  "Quit the current maildir."
+  (interactive)
+  (kill-buffer))
+
 (define-derived-mode maildir-mode nil "Maildir"
   "Major mode for using maildirs.
 
 \\<maildir-mode-map>
 "
+  :group 'maildir
   (setq buffer-read-only t))
 
 (define-key maildir-mode-map "\r" 'maildir-open)
 (define-key maildir-mode-map "d" 'maildir-rm)
+(define-key maildir-mode-map "q" 'maildir-quit)
 
 (defun maildir-list (&optional clear)
   (interactive)
-  (let ((buf (get-buffer-create "*maildir*")))
+  (let ((clear t)
+        (buf (get-buffer-create "*maildir*")))
     (with-current-buffer buf
-      (when clear (erase-buffer))
-      (insert
-       (mapconcat
-        'maildir/hdr->summary
-        (maildir-index maildir/mail-dir)
-        "\n")
-       "\n")
-      (sort-lines t (point-min) (point-max)))
-    (switch-to-buffer buf)
-    (maildir-mode)))
+      (let ((buffer-read-only nil))
+        (when clear (erase-buffer))
+        (insert
+         (mapconcat
+          'maildir/hdr->summary
+          (maildir-index maildir-mail-dir)
+          "\n")
+         "\n")
+        (sort-lines t (point-min) (point-max)))
+      (switch-to-buffer buf)
+      (maildir-mode))))
 
 (provide 'maildir)
 
