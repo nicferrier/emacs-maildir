@@ -185,8 +185,8 @@ changes the value in some way."
     ;; Rsync the filelist to the maildir/new - Would prefer to do this async
     (shell-command-to-string
      (concat
-      "rsync -av --files-from=/tmp/maildircp -e ssh "
-      "nferrier@po1.ferrier:/ "
+      "rsync -av --files-from=/tmp/maildircp "
+      "-e ssh " maildir-remote-host ":/ " ; the filelist identifies the files
       ;; FIXME - very wrong!!! this needs to be the maildir somehow
       "~/mymaildir"))
     ;; Returns the list of new files
@@ -225,7 +225,6 @@ to produce the index for.  By default this is
      collect collect-file))
 
 (defun maildir-lisp ()
-  (interactive)
   (let ((buf (get-buffer-create "*maildir*")))
     (with-current-buffer buf
       (erase-buffer)
@@ -307,6 +306,7 @@ Each value is a number."
 (defun maildir-refresh ()
   "Refresh the maildir."
   (interactive)
+  (message "maildir refreshing...")
   (maildir-pull)
   (maildir-list t))
 
