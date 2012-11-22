@@ -69,6 +69,59 @@
         (t
          (insert data))))))
 
+;; Message stuff
+
+(require 'qp)
+
+;; The keymap for the message view mode
+(defvar maildir-message/keymap-initializedp nil
+  "Is the mode map initialized yet?
+
+If you want to debug the mode map you can set this back to nil
+and it should get reinitialized next time you make the mode.")
+
+;; Hooks for the message mode
+(defvar maildir-message-mode-hook nil
+  "The message mode hooks.")
+
+(defun maildir-message-fill ()
+  "Allow filling of a paragraph even when read only.
+
+MDMUA message buffers are read only but paragraphs are sometimes
+not formatted properly so we provide this command to allow you to
+fill them.
+
+Also causes the buffer to be marked not modified."
+  (interactive)
+  (let ((buffer-read-only nil))
+    (fill-paragraph)
+    (set-buffer-modified-p nil)))
+
+(define-derived-mode maildir-message-mode message-mode ;; parent
+  "Maildir Message"  ; name
+  "Maildir Msg \\{maildir-message-mode-map}" ; docstring
+  (unless maildir-message/keymap-initializedp
+    (define-key maildir-message-mode-map "\C-ca" 'message-reply)
+    (define-key maildir-message-mode-map "\C-cw" 'message-wide-reply)
+    (define-key maildir-message-mode-map "F" 'maildir-message-fill)
+    (define-key maildir-message-mode-map "q" 'kill-buffer)
+    ;;(define-key maildir-message-mode-map "p" 'mdmua-message-open-part)
+    (setq maildir-message/keymap-initializedp t))
+  ;;set the mode as a non-editor mode
+  (put 'maildir-message-mode 'mode-class 'special)
+  ;;ensure that paragraphs are considered to be whole mailing lists
+  (make-local-variable 'paragraph-start)
+  (setq paragraph-start paragraph-separate)
+  ;;setup the buffer to be read only
+  ;; (make-local-variable 'buffer-read-only)
+  (setq buffer-read-only 't)
+  (set-buffer-modified-p nil)
+  ;;run the mode hooks
+  (run-hooks 'maildir-message-mode-hook))
+
+
+;; Maildir parsing stuff
+
 (defun maildir/index-header-parse (header-pair)
   "Parse the HEADER-PAIR.
 
@@ -296,7 +349,8 @@ Each value is a number."
   (interactive
    (list
     (plist-get (text-properties-at (point)) :filename)))
-  (find-file filename))
+  (find-file filename)
+  (maildir-message-mode))
 
 (defun maildir-quit ()
   "Quit the current maildir."
@@ -310,18 +364,23 @@ Each value is a number."
   (maildir-pull)
   (maildir-list t))
 
+(defvar maildir-mode/keymap-initialized-p nil
+  "Whether or not the keymap has been initialized.")
+
 (define-derived-mode maildir-mode nil "Maildir"
   "Major mode for using maildirs.
 
 \\<maildir-mode-map>
 "
   :group 'maildir
-  (setq buffer-read-only t))
+  (setq buffer-read-only t)
+  (unless maildir-mode/keymap-initialized-p
+    (define-key maildir-mode-map "\r" 'maildir-open)
+    (define-key maildir-mode-map "d" 'maildir-rm)
+    (define-key maildir-mode-map "q" 'maildir-quit)
+    (define-key maildir-mode-map "r" 'maildir-refresh)
+    (setq maildir-mode/keymap-initialized-p t)))
 
-(define-key maildir-mode-map "\r" 'maildir-open)
-(define-key maildir-mode-map "d" 'maildir-rm)
-(define-key maildir-mode-map "q" 'maildir-quit)
-(define-key maildir-mode-map "r" 'maildir-refresh)
 
 (defun maildir-list (&optional clear)
   (interactive)
