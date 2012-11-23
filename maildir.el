@@ -344,13 +344,103 @@ Each value is a number."
           (goto-char new-point)))
     (delete-file filename)))
 
+
+;; Multipart buffer locals
+
+(defvar maildir-message-mm-parent-buffer-name nil
+  "Buffer local cache of the parent buffer name.")
+
+(defvar maildir-message-mm-part-number nil
+  "Buffer local cache of the current buffer's part number.")
+
+(defvar maildir-message-mm-parts nil
+  "Buffer local cache of multipart parts.")
+
+;; Multipart ui
+
+(defun maildir/message-open-part (parent-buffer-name part-number)
+  (with-current-buffer (get-buffer parent-buffer-name)
+    (let* ((header-end
+            (save-excursion
+              (goto-char (point-min))
+              (re-search-forward "\n\n" nil t)))
+           (header-text (buffer-substring (point-min) header-end))
+           (parts maildir-message-mm-parts)
+           (part (if (< part-number (length parts))
+                     (elt parts part-number)
+                     (error "maildir-message: No more parts!"))))
+      (with-current-buffer
+          (get-buffer-create
+           (format "%s[%s]" parent-buffer-name part-number))
+        (let ((buffer-read-only nil))
+          (erase-buffer)
+          ;; Insert the message
+          (insert header-text)
+          (insert
+           (with-current-buffer (car part) ; the part buffer
+             (buffer-substring-no-properties (point-min) (point-max))))
+          (maildir-message-mode)
+          (local-set-key
+           ">"
+           (lambda ()
+             (interactive)
+             (maildir-message-open-another-part 1)))
+          (local-set-key
+           "<"
+           (lambda ()
+             (interactive)
+             (maildir-message-open-another-part -1)))
+          (switch-to-buffer (current-buffer))
+          ;; Make the local var to link us back and to other parts
+          (make-local-variable 'maildir-message-mm-parent-buffer-name)
+          (setq maildir-message-mm-parent-buffer-name parent-buffer-name)
+          (make-local-variable 'maildir-message-mm-part-number)
+          (setq maildir-message-mm-part-number part-number)
+          (goto-char (point-min)))))))
+
+(defun maildir-message-open-another-part (&optional which)
+  "Open a different part than this one.
+
+You must be focused on a part buffer, see `maildir/message-open-part'.
+
+WHICH can be `next' or `previous' or a number to indicate a
+specific part.  The default is `next'."
+  (interactive)
+  (unless which (setq which 'next))
+  (maildir/message-open-part
+   maildir-message-mm-parent-buffer-name
+   (cond
+     ((eq which 'next)
+      (+ 1 maildir-message-mm-part-number))
+     ((eq which 'previous)
+      (- maildir-message-mm-part-number 1))
+     ((numberp which)
+      (+ maildir-message-mm-part-number which))
+     (t
+      (+ 1 maildir-message-mm-part-number)))))
+
 (defun maildir-open (filename)
   "Open the specified FILENAME."
   (interactive
    (list
     (plist-get (text-properties-at (point)) :filename)))
-  (find-file filename)
-  (maildir-message-mode))
+  (with-current-buffer (find-file-noselect filename)
+    (let* ((header
+             (save-excursion
+               (goto-char (point-min))
+               (mail-header-extract)))
+           (content-type (mail-header-parse-content-type
+                          (aget header 'content-type))))
+      ;; Decide what to do based on type
+      (if (string-match "multipart/.*" (car content-type))
+          (let ((parts (mm-dissect-buffer))
+                (parent-buffer-name (buffer-name)))
+            (make-local-variable 'maildir-message-mm-parts)
+            (setq maildir-message-mm-parts parts)
+            (maildir/message-open-part parent-buffer-name 1))
+          ;; Else it's a normal mail
+          (switch-to-buffer (current-buffer))
+          (maildir-message-mode)))))
 
 (defun maildir-quit ()
   "Quit the current maildir."
