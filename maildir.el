@@ -122,27 +122,28 @@ Also causes the buffer to be marked not modified."
 
 ;; Maildir parsing stuff
 
-(defun maildir/index-header-parse (header-pair)
+(defun maildir/index-header-parse (header-name header-value)
   "Parse the HEADER-PAIR.
 
 Often does nothing but for some header fields (such as Date) it
 changes the value in some way."
   (cons
-   (car header-pair)
+   header-name
    (cond
-     ((eq 'date (car header-pair))
+     ((eq 'date header-name)
       (format-time-string
        "%Y%m%d%H%M%S"
        (apply
         'encode-time
-        (parse-time-string (cdr header-pair)))))
-     ((memq (car header-pair) '(from to))
-      (destructuring-bind (address . name)
-          (ietf-drums-parse-address
-           (cdr header-pair))
-        (list
-         (list (cons 'address address) (cons 'name name)))))
-     (t (cdr header-pair)))))
+        (parse-time-string header-value))))
+     ((memq header-name '(from to))
+      (let* ((addr (condition-case err
+                       (ietf-drums-parse-address header-value)
+                     (error (cons "" ""))))
+             (address (or (car addr) ""))
+             (name (or (cdr addr) "")))
+        (list (list (cons 'address address) (cons 'name name)))))
+     (t header-value))))
 
 (defun maildir/home (mail-dir &optional sub)
   "Return the properly expanded dir."
@@ -245,6 +246,23 @@ changes the value in some way."
     ;; Returns the list of new files
     (maildir-import-new maildir)))
 
+(defun maildir/file->header (message-file)
+  "Read the MESSAGE-FILE and return it's header.
+
+Disposes of any created buffer."
+  (with-current-buffer (find-file-noselect file)
+    (unwind-protect
+         (mail-header-extract)
+      (kill-buffer (current-buffer)))))
+
+(defun maildir/index-header (file)
+  "Convert MESSAGE-FILE to an index list."
+  (append
+   (list (cons 'file file))
+   (loop for (hdr-name . hdr-value) in (maildir/file->header file)
+      if (memq hdr-name maildir-default-index-field-syms)
+      collect (maildir/index-header-parse hdr-name hdr-value))))
+
 (defun maildir-index (mail-dir &optional field-symbols)
   "Make an index of the specified MAIL-DIR.
 
@@ -255,22 +273,7 @@ to produce the index for.  By default this is
      with collect-file = nil
      for file in (directory-files (maildir/home mail-dir "cur") 't "^[^.]+")
      do
-       (setq collect-file
-             (condition-case nil
-                 (let ((buf (find-file-noselect file)))
-                   (unwind-protect
-                        (append
-                         (loop
-                            for hdr in
-                              (with-current-buffer buf
-                                (mail-header-extract))
-                            if (memq
-                                (car hdr)
-                                maildir-default-index-field-syms)
-                            collect (maildir--index-header-parse hdr))
-                         (list (cons 'file file)))
-                     (kill-buffer buf)))
-               (error nil)))
+       (setq collect-file (maildir/index-header file))
      if collect-file
      if (and (assq 'date collect-file)
              (assq 'to collect-file)
@@ -376,27 +379,26 @@ Each value is a number."
           (erase-buffer)
           ;; Insert the message
           (insert header-text)
-          (insert
-           (with-current-buffer (car part) ; the part buffer
-             (buffer-substring-no-properties (point-min) (point-max))))
-          (maildir-message-mode)
-          (local-set-key
-           ">"
-           (lambda ()
-             (interactive)
-             (maildir-message-open-another-part 1)))
-          (local-set-key
-           "<"
-           (lambda ()
-             (interactive)
-             (maildir-message-open-another-part -1)))
-          (switch-to-buffer (current-buffer))
-          ;; Make the local var to link us back and to other parts
-          (make-local-variable 'maildir-message-mm-parent-buffer-name)
-          (setq maildir-message-mm-parent-buffer-name parent-buffer-name)
-          (make-local-variable 'maildir-message-mm-part-number)
-          (setq maildir-message-mm-part-number part-number)
-          (goto-char (point-min)))))))
+          (let ((end-of-header (point)))
+            (insert
+             (with-current-buffer (car part) ; the part buffer
+               (buffer-substring-no-properties (point-min) (point-max))))
+            (when (eq (elt part 2) 'quoted-printable)
+              (quoted-printable-decode-region end-of-header (point-max)))
+            (maildir-message-mode)
+            (local-set-key ">" (lambda ()
+                                 (interactive)
+                                 (maildir-message-open-another-part 1)))
+            (local-set-key "<" (lambda ()
+                                 (interactive)
+                                 (maildir-message-open-another-part -1)))
+            (switch-to-buffer (current-buffer))
+            ;; Make the local var to link us back and to other parts
+            (make-local-variable 'maildir-message-mm-parent-buffer-name)
+            (setq maildir-message-mm-parent-buffer-name parent-buffer-name)
+            (make-local-variable 'maildir-message-mm-part-number)
+            (setq maildir-message-mm-part-number part-number)
+            (goto-char (point-min))))))))
 
 (defun maildir-message-open-another-part (&optional which)
   "Open a different part than this one.
@@ -430,7 +432,10 @@ specific part.  The default is `next'."
                (goto-char (point-min))
                (mail-header-extract)))
            (content-type (mail-header-parse-content-type
-                          (aget header 'content-type))))
+                          (aget header 'content-type)))
+           (end-of-header
+            (save-excursion
+              (re-search-forward "\n\n" nil t))))
       ;; Decide what to do based on type
       (if (string-match "multipart/.*" (car content-type))
           (let ((parts (mm-dissect-buffer))
@@ -439,6 +444,10 @@ specific part.  The default is `next'."
             (setq maildir-message-mm-parts parts)
             (maildir/message-open-part parent-buffer-name 1))
           ;; Else it's a normal mail
+          (when (equal
+                 (aget header 'content-transfer-encoding)
+                 "quoted-printable")
+            (quoted-printable-decode-region end-of-header (point-max)))
           (switch-to-buffer (current-buffer))
           (maildir-message-mode)))))
 
@@ -471,7 +480,6 @@ specific part.  The default is `next'."
     (define-key maildir-mode-map "r" 'maildir-refresh)
     (setq maildir-mode/keymap-initialized-p t)))
 
-
 (defun maildir-list (&optional clear)
   (interactive)
   (let ((clear t)
@@ -479,12 +487,10 @@ specific part.  The default is `next'."
     (with-current-buffer buf
       (let ((buffer-read-only nil))
         (when clear (erase-buffer))
-        (insert
-         (mapconcat
-          'maildir/hdr->summary
-          (maildir-index maildir-mail-dir)
-          "\n")
-         "\n")
+        (let ((index-list (maildir-index maildir-mail-dir)))
+          (insert
+           (mapconcat 'maildir/hdr->summary index-list "\n")
+           "\n"))
         (sort-lines t (point-min) (point-max)))
       (switch-to-buffer buf)
       (maildir-mode))))
