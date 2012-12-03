@@ -2,8 +2,10 @@
 
 ;; Copyright (C) 2012  Nic Ferrier
 
-;; Author: Nic Ferrier(require 'mailheader) <nferrier@ferrier.me.uk>
+;; Author: Nic Ferrier <nferrier@ferrier.me.uk>
+;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
 ;; Keywords: mail, files
+;; Version: 0.0.2
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -207,6 +209,7 @@ changes the value in some way."
            (make-symbolic-link cache-file cur-file)
            cur-file))))
 
+;;;###autoload
 (defun maildir-pull ()
   "Just memorize what we did for now."
   (interactive)
@@ -480,6 +483,7 @@ specific part.  The default is `next'."
     (define-key maildir-mode-map "r" 'maildir-refresh)
     (setq maildir-mode/keymap-initialized-p t)))
 
+;;;###autoload
 (defun maildir-list (&optional clear)
   (interactive)
   (let ((clear t)
