@@ -212,18 +212,24 @@ changes the value in some way."
 
 ;;;###autoload
 (defun maildir-pull ()
-  "Just memorize what we did for now."
+  "Use ssh and rsync to pull mail from the remote."
   (interactive)
   (let* ((maildir maildir-mail-dir)
-         (filelist (split-string
-                    ;; Would prefer to do this async
-                    (shell-command-to-string
-                     ;; FIXME doesn't find just new - needs to.
-                     (format "ssh %s find %s  -type f -ctime -%d"
-                      maildir-remote-host
-                      (file-name-as-directory maildir-remote-maildir)
-                      maildir-remote-days))
-                    "\n"))
+         (filelist
+          (loop for filename in
+               (split-string
+                ;; Would prefer to do this async
+                (shell-command-to-string
+                 ;; FIXME doesn't find just new - needs to.
+                 (format "ssh %s find %s -type f -ctime -%d"
+                         maildir-remote-host
+                         (file-name-as-directory maildir-remote-maildir)
+                         maildir-remote-days))
+                "\n")
+             when (string-match
+                   (format "^%s\\(/.*\\)" maildir-remote-maildir)
+                   filename)
+             collect (match-string 1 filename)))
          (new-mails
           ;; Produces the list of files we don't have in the maildir's cache
           (loop
@@ -242,11 +248,11 @@ changes the value in some way."
       (save-buffer))
     ;; Rsync the filelist to the maildir/new - Would prefer to do this async
     (shell-command-to-string
-     (concat
-      "rsync -av --files-from=/tmp/maildircp "
-      "-e ssh " maildir-remote-host ":/ " ; the filelist identifies the files
-      ;; FIXME - very wrong!!! this needs to be the maildir somehow
-      "~/mymaildir"))
+     (format
+      "rsync -av --files-from=/tmp/maildircp -e ssh %s:%s %s"
+      maildir-remote-host
+      maildir-remote-maildir
+      maildir-mail-dir))
     ;; Returns the list of new files
     (maildir-import-new maildir)))
 
