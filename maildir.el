@@ -283,7 +283,10 @@ to produce the index for.  By default this is
      with collect-file = nil
      for file in (directory-files (maildir/home mail-dir "cur") 't "^[^.]+")
      do
-       (setq collect-file (maildir/index-header file))
+       (setq collect-file
+             (condition-case nil
+                 (maildir/index-header file)
+               (error nil)))
      if collect-file
      if (and (assq 'date collect-file)
              (assq 'to collect-file)
@@ -442,7 +445,8 @@ specific part.  The default is `next'."
                (goto-char (point-min))
                (mail-header-extract)))
            (content-type (mail-header-parse-content-type
-                          (aget header 'content-type)))
+                          (or (aget header 'content-type)
+                              "text/plain")))
            (end-of-header
             (save-excursion
               (re-search-forward "\n\n" nil t))))
