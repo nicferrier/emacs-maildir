@@ -382,9 +382,19 @@ Each value is a number."
               (re-search-forward "\n\n" nil t)))
            (header-text (buffer-substring (point-min) header-end))
            (parts maildir-message-mm-parts)
-           (part (if (< part-number (length parts))
-                     (elt parts part-number)
-                     (error "maildir-message: No more parts!"))))
+           (part (flet
+                     ((get-main-part (parts get-part-fn)
+                        (let ((head (car parts)))
+                          (if (and
+                               (stringp head)
+                               (string-match "multipart/.*" head))
+                              (funcall get-part-fn
+                                       (elt parts 1)
+                                       get-part-fn)
+                              parts))))
+                   (if (< part-number (length parts))
+                       (get-main-part parts 'get-main-part)
+                       (error "maildir-message: No more parts!")))))
       (with-current-buffer
           (get-buffer-create
            (format "%s[%s]" parent-buffer-name part-number))
