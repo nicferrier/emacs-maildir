@@ -374,6 +374,27 @@ Each value is a number."
 
 ;; Multipart ui
 
+(defun maildir/get-main-part (parts)
+  (let ((head (car parts)))
+    (if (and
+         (stringp head)
+         (string-match "multipart/.*" head))
+        (maildir/get-main-part (elt parts 1))
+        parts)))
+
+(defun maildir/formatted-header (header-string)
+  "Format the header, mostly so we can the drums stuff."
+  (loop
+     for header-line
+     in (split-string header-string "\n")
+     concat (if (string-match "^From: \\(.*\\)" header-line)
+                (concat
+                 "From: "
+                 (car (ietf-drums-parse-address
+                       (match-string 1 header-line))) "\n")
+                ;; Else just the header-line
+                (concat header-line "\n"))))
+
 (defun maildir/message-open-part (parent-buffer-name part-number)
   (with-current-buffer (get-buffer parent-buffer-name)
     (let* ((header-end
@@ -382,32 +403,32 @@ Each value is a number."
               (re-search-forward "\n\n" nil t)))
            (header-text (buffer-substring (point-min) header-end))
            (parts maildir-message-mm-parts)
-           (part (flet
-                     ((get-main-part (parts get-part-fn)
-                        (let ((head (car parts)))
-                          (if (and
-                               (stringp head)
-                               (string-match "multipart/.*" head))
-                              (funcall get-part-fn
-                                       (elt parts 1)
-                                       get-part-fn)
-                              parts))))
-                   (if (< part-number (length parts))
-                       (get-main-part parts 'get-main-part)
-                       (error "maildir-message: No more parts!")))))
+           (part (if (< part-number (length parts))
+                     (maildir/get-main-part parts)
+                     (error "maildir-message: No more parts!")))
+           (part-desc (elt part 1))
+           (charset (condition-case nil
+                        (intern (downcase (aget (cdr part-desc) 'charset)))
+                      (error nil)))
+           (content-encoding (condition-case nil
+                                 (elt part 2)
+                               (error nil))))
       (with-current-buffer
           (get-buffer-create
            (format "%s[%s]" parent-buffer-name part-number))
         (let ((buffer-read-only nil))
           (erase-buffer)
           ;; Insert the message
-          (insert header-text)
+          (insert (maildir/formatted-header header-text))
           (let ((end-of-header (point)))
             (insert
              (with-current-buffer (car part) ; the part buffer
-               (buffer-substring-no-properties (point-min) (point-max))))
-            (when (eq (elt part 2) 'quoted-printable)
+               (buffer-substring-no-properties
+                (point-min) (point-max))))
+            (when (eq content-encoding 'quoted-printable)
               (quoted-printable-decode-region end-of-header (point-max)))
+            (when charset
+              (decode-coding-region (point-min) (point) charset))
             (maildir-message-mode)
             (local-set-key ">" (lambda ()
                                  (interactive)
@@ -421,7 +442,7 @@ Each value is a number."
             (setq maildir-message-mm-parent-buffer-name parent-buffer-name)
             (make-local-variable 'maildir-message-mm-part-number)
             (setq maildir-message-mm-part-number part-number)
-            (goto-char (point-min))))))))
+            (goto-char end-of-header)))))))
 
 (defun maildir-message-open-another-part (&optional which)
   "Open a different part than this one.
