@@ -1,4 +1,8 @@
-This is a maildir based mail user agent. The basic idea is:
+= Maildir User Agent =
+
+This is a maildir based mail user agent for Emacs. 
+
+The basic idea is:
 
 * you pull new files from a remote MTA's maildir with SSH/rsync
 ** requires that you can run shell commands at the remote MTA
@@ -13,3 +17,12 @@ The maildir flow looks like this:
 
 Finally, you can use the command //maildir-list// to generte a buffer
 with a listing of your current maildir in.
+
+
+== Maildir management ==
+
+The maildir is just a directory on your local machine. We make one
+modifcation to the maildir standard which is to add a {{{cache}}}
+directory to the maildir. The {{{cache}}} directory is used to keep a
+record of every message file in the mailbox so that we can effectively
+rsync.
