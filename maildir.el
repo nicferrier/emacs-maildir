@@ -210,10 +210,8 @@ changes the value in some way."
            (make-symbolic-link cache-file cur-file)
            cur-file))))
 
-;;;###autoload
-(defun maildir-pull ()
-  "Use ssh and rsync to pull mail from the remote."
-  (interactive)
+(defun maildir/pull ()
+  "Base function for pulling maildir."
   (let* ((maildir maildir-mail-dir)
          (filelist
           (loop for filename in
@@ -256,6 +254,12 @@ changes the value in some way."
     ;; Returns the list of new files
     (maildir-import-new maildir)))
 
+;;;###autoload
+(defun maildir-pull ()
+  "Use ssh and rsync to pull mail from the remote."
+  (interactive)
+  (maildir/pull))
+
 (defun maildir/file->header (message-file)
   "Read the MESSAGE-FILE and return it's header.
 
@@ -283,14 +287,23 @@ to produce the index for.  By default this is
      with collect-file = nil
      for file in (directory-files (maildir/home mail-dir "cur") 't "^[^.]+")
      do
-       (setq collect-file
-             (condition-case nil
-                 (maildir/index-header file)
-               (error nil)))
+       (setq
+        collect-file
+        (condition-case err
+            (let ((indexed (maildir/index-header file)))
+              (if (and (assq 'date indexed)
+                       (assq 'to indexed)
+                       (assq 'from indexed))
+                  indexed
+                  ;; Else
+                  (message "maildir-index: parsing %s expectation error" file)
+                  (delete-file file)
+                  nil))
+          (error
+           (message "maildir-index: parsing %s error %S" file err)
+           (delete-file file)
+           nil)))
      if collect-file
-     if (and (assq 'date collect-file)
-             (assq 'to collect-file)
-             (assq 'from collect-file))
      collect collect-file))
 
 (defun maildir-lisp ()
