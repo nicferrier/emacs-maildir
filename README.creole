@@ -26,3 +26,14 @@ modifcation to the maildir standard which is to add a {{{cache}}}
 directory to the maildir. The {{{cache}}} directory is used to keep a
 record of every message file in the mailbox so that we can effectively
 rsync.
+
+
+== Todo ==
+
+* make sub maildirs
+** create the directory named "." name
+** create sub-directories named {{{new}}} and {{{cur}}}
+
+* allow messages to be moved to sub-maildirs
+** "m" or some such
+** mv the file (which is actually a link) from the current maildir to the new one
