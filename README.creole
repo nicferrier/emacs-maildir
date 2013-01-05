@@ -37,3 +37,6 @@ rsync.
 * allow messages to be moved to sub-maildirs
 ** "m" or some such
 ** mv the file (which is actually a link) from the current maildir to the new one
+
+* allow choosing which maildir to list
+** have maildir-list take an optional maildir directory

@@ -540,6 +540,14 @@ specific part.  The default is `next'."
 
 ;;;###autoload
 (defun maildir-list (&optional clear)
+  "List the maildir."
+  ;; FIXME - this should take an optional maildir location so we can
+  ;; can use maildirs other than maildir-mail-dir, it should use
+  ;; maildir-mail-dir as the default and place the maildir being used
+  ;; as a buffer-local variable in the maildir buffer. The maildir
+  ;; buffer should be named as *maildir* if we're using the default
+  ;; maildir-mail-dir or a specfic *maildir-MAILDIR* if we're using a
+  ;; special one.
   (interactive)
   (let ((clear t)
         (buf (get-buffer-create "*maildir*")))
@@ -550,9 +558,18 @@ specific part.  The default is `next'."
           (insert
            (mapconcat 'maildir/hdr->summary index-list "\n")
            "\n"))
+        ;; For display of maildir folders this (point-max) will have
+        ;; to be the start of the folder list
         (sort-lines t (point-min) (point-max)))
       (switch-to-buffer buf)
       (maildir-mode))))
+
+(defun maildir-new-maildir (buffer name)
+  "Make a new maildir."
+  (let ((base-maildir maildir-mail-dir))
+    (assert t nil "maildir-new-maildir ")
+    (make-directory (format "%s/.%s/cur" name) t)
+    (make-directory (format "%s/.%s/new" name) t)))
 
 (provide 'maildir)
 
