@@ -30,6 +30,9 @@ rsync.
 
 == Todo ==
 
+* implement READ/UNREAD state
+** TODO change {{{maildir-import-new}}} to add the info
+
 * make sub maildirs
 ** create the directory named "." name
 ** create sub-directories named {{{new}}} and {{{cur}}}
