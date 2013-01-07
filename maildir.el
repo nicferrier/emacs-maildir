@@ -264,7 +264,7 @@ changes the value in some way."
   "Read the MESSAGE-FILE and return it's header.
 
 Disposes of any created buffer."
-  (with-current-buffer (find-file-noselect file)
+  (with-current-buffer (find-file-noselect message-file)
     (unwind-protect
          (mail-header-extract)
       (kill-buffer (current-buffer)))))
