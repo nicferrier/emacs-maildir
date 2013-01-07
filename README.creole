@@ -30,8 +30,13 @@ rsync.
 
 == Todo ==
 
-* implement READ/UNREAD state
-** TODO change {{{maildir-import-new}}} to add the info
+* implement SEEN/READ/REPLIED state
+** handling SEEN seems easy, just add something on open
+** handling reply is harder, have to add a hook to mail send
+*** and some reference in the reply mail buffer to the original message filename?
+
+* handle {{{mail-header-extract}}} failure with headers without spaces
+** Just report it as a bug in Emacs?
 
 * make sub maildirs
 ** create the directory named "." name
