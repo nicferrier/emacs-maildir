@@ -25,8 +25,17 @@ The maildir is just a directory on your local machine. We make one
 modifcation to the maildir standard which is to add a {{{cache}}}
 directory to the maildir. The {{{cache}}} directory is used to keep a
 record of every message file in the mailbox so that we can effectively
-rsync.
+rsync. The message files in the //normal// maildir directories
+(//cur// and //new//) are actually only symlinks into the cache
+directory.
 
+//All// mail you pull from the remote maildir will end up in the
+cache, even if you never see it in your INBOX. This is because we do
+some filtering on whether maildir.el can actually display your mail or
+not. 
+
+If you feel like you're not seeing email grep your cache directory for
+a the mail. If you find a bug, obviously, report it to me.
 
 == Todo ==
 
