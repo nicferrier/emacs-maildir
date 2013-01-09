@@ -15,7 +15,7 @@ The maildir flow looks like this:
 ** it pulls files from //new// into the local cache
 ** and symlinks them to //cur//
 
-Finally, you can use the command //maildir-list// to generte a buffer
+Finally, you can use the command //maildir-list// to generate a buffer
 with a listing of your current maildir in.
 
 
