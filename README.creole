@@ -57,3 +57,5 @@ a the mail. If you find a bug, obviously, report it to me.
 
 * allow choosing which maildir to list
 ** have maildir-list take an optional maildir directory
+
+* shard the storage of the mails in the cache directory.
