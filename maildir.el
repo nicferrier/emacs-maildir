@@ -509,6 +509,12 @@ specific part.  The default is `next'."
           (switch-to-buffer (current-buffer))
           (maildir-message-mode)))))
 
+
+;; Maildir list stuff
+
+(defvar maildir/buffer-mail-dir nil
+  "Buffer-local used for references to a buffer's maildir.")
+
 (defun maildir-quit ()
   "Quit the current maildir."
   (interactive)
@@ -519,7 +525,7 @@ specific part.  The default is `next'."
   (interactive)
   (message "maildir refreshing...")
   (maildir-pull)
-  (maildir-list t))
+  (maildir-list maildir/buffer-mail-dir t))
 
 (defvar maildir-mode/keymap-initialized-p nil
   "Whether or not the keymap has been initialized.")
@@ -536,25 +542,24 @@ specific part.  The default is `next'."
     (define-key maildir-mode-map "d" 'maildir-rm)
     (define-key maildir-mode-map "q" 'maildir-quit)
     (define-key maildir-mode-map "r" 'maildir-refresh)
+    (define-key maildir-mode-map "m" 'maildir-move)
+    (define-key maildir-mode-map "+" 'maildir-make-new)
     (setq maildir-mode/keymap-initialized-p t)))
 
 ;;;###autoload
-(defun maildir-list (&optional clear)
+(defun maildir-list (mail-dir &optional clear)
   "List the maildir."
-  ;; FIXME - this should take an optional maildir location so we can
-  ;; can use maildirs other than maildir-mail-dir, it should use
-  ;; maildir-mail-dir as the default and place the maildir being used
-  ;; as a buffer-local variable in the maildir buffer. The maildir
-  ;; buffer should be named as *maildir* if we're using the default
-  ;; maildir-mail-dir or a specfic *maildir-MAILDIR* if we're using a
-  ;; special one.
-  (interactive)
+  (interactive
+   (list maildir-mail-dir))
   (let ((clear t)
-        (buf (get-buffer-create "*maildir*")))
+        (buf (get-buffer-create
+              (if (equal mail-dir maildir-mail-dir)
+                  "*maildir*"
+                  (format "*maildir-%s*" mail-dir)))))
     (with-current-buffer buf
       (let ((buffer-read-only nil))
         (when clear (erase-buffer))
-        (let ((index-list (maildir-index maildir-mail-dir)))
+        (let ((index-list (maildir-index mail-dir)))
           (insert
            (mapconcat 'maildir/hdr->summary index-list "\n")
            "\n"))
@@ -562,14 +567,77 @@ specific part.  The default is `next'."
         ;; to be the start of the folder list
         (sort-lines t (point-min) (point-max)))
       (switch-to-buffer buf)
-      (maildir-mode))))
+      (maildir-mode)
+      ;; Now set the buffer local maildir pointer
+      (make-local-variable 'maildir/buffer-mail-dir)
+      (setq maildir/buffer-mail-dir mail-dir))))
 
-(defun maildir-new-maildir (buffer name)
+(defun maildir/new-maildir (name &optional base-maildir)
+  "Make a new maildir NAME.
+
+BASE-MAILDIR is optional and specifies the base maildir to create
+the new maildir in.  `maildir-mail-dir' is used by default."
+  (let ((base (if (file-exists-p base-maildir) base-maildir maildir-mail-dir)))
+    (make-directory (format "%s/.%s/cur" base name) t)
+    (make-directory (format "%s/.%s/new" base name) t)))
+
+(defun maildir-make-new (name)
   "Make a new maildir."
-  (let ((base-maildir maildir-mail-dir))
-    (assert t nil "maildir-new-maildir ")
-    (make-directory (format "%s/.%s/cur" name) t)
-    (make-directory (format "%s/.%s/new" name) t)))
+  (interactive "Mnew maildir name: ")
+  ;; FIXME we could make mail-dir buffer local and then we could find
+  ;; this in the buffer.
+  (maildir/new-maildir name maildir-mail-dir)
+  (message "maildir: created %s" name))
+
+(defun maildir/directory-p (dir)
+  (and (file-directory-p dir) dir))
+
+(defun maildir/list-maildirs (&optional base-maildir)
+  "List the maildirs under a particular BASE-MAILDIR.
+
+By default list `maildir-mail-dir'."
+  (let ((base (if (file-exists-p base-maildir) base-maildir maildir-mail-dir)))
+    (mapcar 'maildir/directory-p
+            (directory-files base t "\\.[A-Za-z0-9-_]+"))))
+
+(defun maildir/directory->pair (directory)
+  "Convert a directory to a cons: basename . directory"
+  (cons
+   (file-name-nondirectory directory)
+   directory))
+
+(defvar maildir/move-history nil
+  "History of maildir move folders.")
+
+(defun maildir-move (filename to-folder)
+  "Move the message in BUFFER at point PT TO-FOLDER."
+  (interactive
+   (list
+    (get-text-property (point) :filename)
+    (let ((pairs
+           (mapcar
+            'maildir/directory->pair
+            (maildir/list-maildirs maildir/buffer-mail-dir))))
+      (aget pairs
+            (completing-read
+             "move to folder: "
+             pairs nil t
+             (car maildir/move-history) 'maildir/move-history)))))
+  ;; Do we need to kill the current line?
+  (let ((do-kill-message
+            (equal (get-text-property (point) :filename)
+                   filename)))
+    (rename-file
+     filename
+     (format
+      "%s/cur/%s"
+      to-folder (file-name-nondirectory filename)))
+    (when do-kill-message
+      (let (buffer-read-only
+            (kill-whole-line t))
+        (save-excursion
+          (goto-char (line-beginning-position))
+          (kill-line))))))
 
 (provide 'maildir)
 
