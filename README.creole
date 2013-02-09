@@ -39,12 +39,12 @@ a the mail. If you find a bug, obviously, report it to me.
 
 == Commands ==
 
-* RET  open the message
-* +    make a new maildir
-* d    delete the message
-* m    move the message to another folder
-* q    quit
-* r    pull from the remote and refresh
+* //RET//  open the message
+* //+//    make a new maildir
+* //d//    delete the message
+* //m//    move the message to another folder
+* //q//    quit
+* //r//    pull from the remote and refresh
  
 
 == Todo ==
