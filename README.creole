@@ -57,15 +57,18 @@ a the mail. If you find a bug, obviously, report it to me.
 * handle {{{mail-header-extract}}} failure with headers without spaces
 ** Just report it as a bug in Emacs?
 
-* make sub maildirs
-** create the directory named "." name
-** create sub-directories named {{{new}}} and {{{cur}}}
-
-* allow messages to be moved to sub-maildirs
-** "m" or some such
-** mv the file (which is actually a link) from the current maildir to the new one
-
 * allow choosing which maildir to list
 ** have maildir-list take an optional maildir directory
 
 * shard the storage of the mails in the cache directory.
+
+* actorize the pull and index into a child-emacs
+** so that it doesn't slow anything down
+
+* add an Elnode app that we can run on the remote for delivering mail
+** this will replace rsync
+** a query interface to find all files since a particular date
+** POST /maildir/query since=YYYYMMDDHHMMSS
+** the client interface can then track the youngest file we have
+*** and ask for any files since
+
