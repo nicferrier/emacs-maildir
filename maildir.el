@@ -5,7 +5,7 @@
 ;; Author: Nic Ferrier <nferrier@ferrier.me.uk>
 ;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
 ;; Keywords: mail, files
-;; Version: 0.0.7
+;; Version: 0.0.8
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -525,7 +525,7 @@ specific part.  The default is `next'."
   (interactive)
   (message "maildir refreshing...")
   (maildir-pull)
-  (maildir-list maildir/buffer-mail-dir t))
+  (maildir-list (or maildir/buffer-mail-dir maildir-mail-dir) t))
 
 (defvar maildir-mode/keymap-initialized-p nil
   "Whether or not the keymap has been initialized.")
