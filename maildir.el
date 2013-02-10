@@ -570,7 +570,8 @@ specific part.  The default is `next'."
       (maildir-mode)
       ;; Now set the buffer local maildir pointer
       (make-local-variable 'maildir/buffer-mail-dir)
-      (setq maildir/buffer-mail-dir mail-dir))))
+      (setq maildir/buffer-mail-dir mail-dir)
+      (goto-char (point-min)))))
 
 (defun maildir/new-maildir (name &optional base-maildir)
   "Make a new maildir NAME.
