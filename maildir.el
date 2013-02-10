@@ -5,7 +5,7 @@
 ;; Author: Nic Ferrier <nferrier@ferrier.me.uk>
 ;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
 ;; Keywords: mail, files
-;; Version: 0.0.8
+;; Version: 0.0.9
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -527,6 +527,10 @@ specific part.  The default is `next'."
   (maildir-pull)
   (maildir-list (or maildir/buffer-mail-dir maildir-mail-dir) t))
 
+(defun maildir-mode-next-field ()
+  (interactive)
+  (re-search-forward "[^ ] "))
+
 (defvar maildir-mode/keymap-initialized-p nil
   "Whether or not the keymap has been initialized.")
 
@@ -539,6 +543,9 @@ specific part.  The default is `next'."
   (setq buffer-read-only t)
   (unless maildir-mode/keymap-initialized-p
     (define-key maildir-mode-map "\r" 'maildir-open)
+    (define-key maildir-mode-map "n" 'next-line)
+    (define-key maildir-mode-map "p" 'previous-line)
+    (define-key maildir-mode-map "\t" 'maildir-mode-next-field)
     (define-key maildir-mode-map "d" 'maildir-rm)
     (define-key maildir-mode-map "q" 'maildir-quit)
     (define-key maildir-mode-map "r" 'maildir-refresh)
