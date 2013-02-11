@@ -5,7 +5,7 @@
 ;; Author: Nic Ferrier <nferrier@ferrier.me.uk>
 ;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
 ;; Keywords: mail, files
-;; Version: 0.0.9
+;; Version: 0.0.10
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -520,6 +520,7 @@ specific part.  The default is `next'."
   (interactive)
   (kill-buffer))
 
+;;;###autoload
 (defun maildir-refresh ()
   "Refresh the maildir."
   (interactive)
