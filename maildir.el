@@ -1,4 +1,4 @@
-;;; maildir.el --- a full maildir handling tool
+;;; maildir.el --- a full maildir handling tool -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2012  Nic Ferrier
 
@@ -532,6 +532,35 @@ specific part.  The default is `next'."
   (interactive)
   (re-search-forward "[^ ] "))
 
+
+(defvar maildir-isearch-overlays nil
+  "Set by isearch extensions to the list of overlays.")
+
+(defun maildir/isearch-caller (to-call)
+  "Return a function to call TO-CALL within an isearch.
+
+When TO-CALL is called the variable `maildir-isearch-overlays' is
+set to the list of overlays that isearch found."
+  (lambda ()
+    (interactive)
+    (let ((maildir-isearch-overlays
+           (loop for o in (overlays-in (point-min) (point-max))
+              if (eq (overlay-get o 'face) 'lazy-highlight)
+              collect o)))
+      (call-interactively to-call))))
+
+(defvar maildir/isearch-keymap nil
+  "The keymap containing extra things we enable during isearch.")
+
+(defun maildir/isearch-hook-jack-in ()
+  "To be called by the isearch hook to connect our keymap."
+  (unless maildir/isearch-keymap
+    (setq maildir/isearch-keymap (make-sparse-keymap))
+    (set-keymap-parent maildir/isearch-keymap isearch-mode-map)
+    (define-key maildir/isearch-keymap (kbd "M-m")
+      (maildir/isearch-caller 'maildir-move)))
+  (setq overriding-terminal-local-map maildir/isearch-keymap))
+
 (defvar maildir-mode/keymap-initialized-p nil
   "Whether or not the keymap has been initialized.")
 
@@ -579,6 +608,7 @@ specific part.  The default is `next'."
       ;; Now set the buffer local maildir pointer
       (make-local-variable 'maildir/buffer-mail-dir)
       (setq maildir/buffer-mail-dir mail-dir)
+      (add-hook 'isearch-mode-hook 'maildir/isearch-hook-jack-in t t)
       (goto-char (point-min)))))
 
 (defun maildir/new-maildir (name &optional base-maildir)
@@ -618,35 +648,54 @@ By default list `maildir-mail-dir'."
 (defvar maildir/move-history nil
   "History of maildir move folders.")
 
-(defun maildir-move (filename to-folder)
-  "Move the message in BUFFER at point PT TO-FOLDER."
+(defun maildir/complete-folder ()
+  (let ((pairs
+         (mapcar
+          'maildir/directory->pair
+          (maildir/list-maildirs maildir/buffer-mail-dir))))
+    (aget pairs
+          (completing-read
+           "move to folder: "
+           pairs nil t
+           (car maildir/move-history) 'maildir/move-history))))
+
+(defun maildir-move (to-folder &rest filename-list)
+  "Move the files in FILENAME-LIST to TO-FOLDER.
+
+When called interactively this moves the message at `point'.
+
+When called interactively from inside an incremental search this
+moves all the messages the search is highlighting."
   (interactive
-   (list
-    (get-text-property (point) :filename)
-    (let ((pairs
-           (mapcar
-            'maildir/directory->pair
-            (maildir/list-maildirs maildir/buffer-mail-dir))))
-      (aget pairs
-            (completing-read
-             "move to folder: "
-             pairs nil t
-             (car maildir/move-history) 'maildir/move-history)))))
+   (if maildir-isearch-overlays
+       (cons (maildir/complete-folder)
+             (loop for o in maildir-isearch-overlays
+                collect (get-text-property (overlay-start o) :filename)))
+       ;; Else it's probably just one, in a buffer
+       (list
+        (maildir/complete-folder)
+        (get-text-property (point) :filename))))
   ;; Do we need to kill the current line?
-  (let ((do-kill-message
-            (equal (get-text-property (point) :filename)
-                   filename)))
-    (rename-file
-     filename
-     (format
-      "%s/cur/%s"
-      to-folder (file-name-nondirectory filename)))
-    (when do-kill-message
-      (let (buffer-read-only
-            (kill-whole-line t))
-        (save-excursion
-          (goto-char (line-beginning-position))
-          (kill-line))))))
+  (loop for filename in filename-list
+     do
+       (condition-case err
+           (let ((pos (text-property-any
+                       (point-min) (point-max)
+                       :filename filename)))
+             (rename-file
+              filename
+              (format
+               "%s/cur/%s"
+               to-folder (file-name-nondirectory filename)))
+             (when pos
+               (let (buffer-read-only
+                     (kill-whole-line t))
+                 (save-excursion
+                   (goto-char (line-beginning-position))
+                   (kill-line)))))
+         (error (message
+                 "maildir-move %S while moving %S"
+                 (car err) filename)))))
 
 (provide 'maildir)
 
