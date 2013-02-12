@@ -586,6 +586,7 @@ set to the list of overlays that isearch found."
 ;;;###autoload
 (defun maildir-list (mail-dir &optional clear)
   "List the maildir."
+  ;; TODO how to resolve the location of a specified mail-dir?
   (interactive
    (list maildir-mail-dir))
   (let ((clear t)
