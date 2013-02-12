@@ -75,3 +75,27 @@ a the mail. If you find a bug, obviously, report it to me.
 ** the client interface can then track the youngest file we have
 *** and ask for any files since
 
+* add an isearch mode to allow isearch to specify things for commands to work on
+** the idea is you do an isearch to highlight some term
+** and then press some command string, M-m for example (for move) or M-d for delete
+** and everything highlighted would be deleted
+** isearch highlighted text is something to do with `isearch-lazy-highlight-overlays'
+** this conversation with forcer where we discuss approaches to overriding isearch's mode map for maildir
+
+{{{
+13:11 <nicferrier> forcer: but I think what I really need is a way
+                   to add commands to isearch
+13:12 <nicferrier> there's a mode map I can get at... but I wonder
+                   how I could alter that just for the mode I'm
+                   interested in.
+13:12 <nicferrier> hum
+13:12 <nicferrier> make the isearch mode map buffer local?
+13:13 <forcer> That would work
+13:13 <forcer> What isearch does is this:
+13:13 <forcer>   (setq overriding-terminal-local-map
+               isearch-mode-map)
+13:13 <forcer>   (run-hooks 'isearch-mode-hook)
+13:14 <forcer> So you could in isearch-mode-hook set
+               overriding-terminal-local-map to your own keymap
+               which has isearch-mode-map as a parent
+}}}
