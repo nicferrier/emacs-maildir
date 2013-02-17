@@ -127,7 +127,6 @@ Also causes the buffer to be marked not modified."
   ;;run the mode hooks
   (run-hooks 'maildir-message-mode-hook))
 
-
 ;; Maildir parsing stuff
 
 (defun maildir/index-header-parse (header-name header-value)
