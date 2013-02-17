@@ -100,6 +100,9 @@ Also causes the buffer to be marked not modified."
     (fill-paragraph)
     (set-buffer-modified-p nil)))
 
+(defvar maildir-message-header-end nil
+  "Buffer local end of header marker.")
+
 (define-derived-mode maildir-message-mode message-mode ;; parent
   "Maildir Message"  ; name
   "Maildir Msg \\{maildir-message-mode-map}" ; docstring
@@ -115,6 +118,8 @@ Also causes the buffer to be marked not modified."
   ;;ensure that paragraphs are considered to be whole mailing lists
   (make-local-variable 'paragraph-start)
   (setq paragraph-start paragraph-separate)
+  ;; make the local variable for the end of the header
+  (make-local-variable 'maildir-message-header-end)
   ;;setup the buffer to be read only
   ;; (make-local-variable 'buffer-read-only)
   (setq buffer-read-only 't)
@@ -478,9 +483,6 @@ specific part.  The default is `next'."
      (t
       (+ 1 maildir-message-mm-part-number)))))
 
-(defvar maildir-message-header-end nil
-  "Buffer local end of header marker.")
-
 (defun maildir-open (filename)
   "Open the specified FILENAME."
   (interactive
@@ -511,10 +513,8 @@ specific part.  The default is `next'."
             (quoted-printable-decode-region end-of-header (point-max)))
           (switch-to-buffer (current-buffer))
           (maildir-message-mode)
-          (make-variable-buffer-local 'maildir-message-header-end)
           (setq maildir-message-header-end end-of-header)
           (goto-char maildir-message-header-end)))))
-
 
 ;; Maildir list stuff
 
