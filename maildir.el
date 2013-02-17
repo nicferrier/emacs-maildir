@@ -478,6 +478,9 @@ specific part.  The default is `next'."
      (t
       (+ 1 maildir-message-mm-part-number)))))
 
+(defvar maildir-message-header-end nil
+  "Buffer local end of header marker.")
+
 (defun maildir-open (filename)
   "Open the specified FILENAME."
   (interactive
@@ -507,7 +510,10 @@ specific part.  The default is `next'."
                  "quoted-printable")
             (quoted-printable-decode-region end-of-header (point-max)))
           (switch-to-buffer (current-buffer))
-          (maildir-message-mode)))))
+          (maildir-message-mode)
+          (make-variable-buffer-local 'maildir-message-header-end)
+          (setq maildir-message-header-end end-of-header)
+          (goto-char maildir-message-header-end)))))
 
 
 ;; Maildir list stuff
