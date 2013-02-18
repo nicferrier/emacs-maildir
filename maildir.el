@@ -584,6 +584,7 @@ set to the list of overlays that isearch found."
     (define-key maildir-mode-map "d" 'maildir-rm)
     (define-key maildir-mode-map "q" 'maildir-quit)
     (define-key maildir-mode-map "r" 'maildir-refresh)
+    (define-key maildir-mode-map "g" 'maildir-refresh)
     (define-key maildir-mode-map "m" 'maildir-move)
     (define-key maildir-mode-map "+" 'maildir-make-new)
     (setq maildir-mode/keymap-initialized-p t)))
