@@ -84,8 +84,10 @@ If you want to debug the mode map you can set this back to nil
 and it should get reinitialized next time you make the mode.")
 
 ;; Hooks for the message mode
-(defvar maildir-message-mode-hook nil
-  "The message mode hooks.")
+(defcustom maildir-message-mode-hook '()
+  "The message mode hooks."
+  :type 'hook
+  :group 'maildir)
 
 (defun maildir-message-fill ()
   "Allow filling of a paragraph even when read only.
