@@ -485,6 +485,19 @@ specific part.  The default is `next'."
      (t
       (+ 1 maildir-message-mm-part-number)))))
 
+(defun maildir/msg-header-fix ()
+  "Fix `mail-header-extract'.
+
+The function has a bug where it won't read headers with no value.
+This is probably bad but we should still read them."
+  (save-excursion
+    (goto-char (point-min))
+    (let ((buffer-read-only nil)
+          (end-of-header (mail-header-end)))
+    (while (re-search-forward "^\\([A-Za-z0-9_-]+\\):\n" end-of-header t)
+      (backward-char)
+      (insert " dummyvalue")))))
+
 (defun maildir-open (filename)
   "Open the specified FILENAME."
   (interactive
@@ -494,6 +507,7 @@ specific part.  The default is `next'."
     (let* ((header
              (save-excursion
                (goto-char (point-min))
+               (maildir/msg-header-fix)
                (mail-header-extract)))
            (content-type (mail-header-parse-content-type
                           (or (aget header 'content-type)
