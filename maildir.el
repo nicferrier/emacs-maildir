@@ -395,14 +395,6 @@ Each value is a number."
 
 ;; Multipart ui
 
-(defun maildir/get-main-part (parts)
-  (let ((head (car parts)))
-    (if (and
-         (stringp head)
-         (string-match-p "multipart/.*" head))
-        (maildir/get-main-part (elt parts 1))
-        parts)))
-
 (defun maildir/formatted-header (header-string)
   "Format the header, mostly so we can the drums stuff."
   (loop
@@ -488,18 +480,48 @@ specific part.  The default is `next'."
      (t
       (+ 1 maildir-message-mm-part-number)))))
 
-(defun maildir/msg-header-fix ()
+(defun maildir/msg-header-fix (end-of-header-pt)
   "Fix `mail-header-extract'.
 
 The function has a bug where it won't read headers with no value.
 This is probably bad but we should still read them."
   (save-excursion
     (goto-char (point-min))
-    (let ((buffer-read-only nil)
-          (end-of-header (mail-header-end)))
-    (while (re-search-forward "^\\([A-Za-z0-9_-]+\\):\n" end-of-header t)
+    (let ((buffer-read-only nil))
+    (while (re-search-forward "^\\([A-Za-z0-9_-]+\\):\n" end-of-header-pt t)
       (backward-char)
-      (insert " dummyvalue")))))
+      (insert " dummyvalue")
+      (save-buffer)))))
+
+(defun maildir/display-inline (header content-type end-of-header-point buffer)
+  "Display inline part."
+  ;; FIXME - replace this with some emacs function?
+  (with-current-buffer buffer
+    (when (equal
+           (aget header 'content-transfer-encoding)
+           "quoted-printable")
+      (quoted-printable-decode-region
+       end-of-header-point (point-max)))
+    (decode-coding-region
+     end-of-header-point (point-max)
+     ;; The coding type
+     (intern (cdr (cadr content-type))))))
+
+(defun maildir/mimetype-index (parts mime-type-regex)
+  "Find the index of the specified MIME-TYPE-REGEX.
+
+PARTS is a part list as returned by `mm-disect-buffer'.  Each
+part is either a string mime-type or a list describing a part
+where the cadr is the mime-type."
+  (let ((i 0))
+    (loop for mimetype in parts
+       with mt
+       do (setq mt (if (stringp mimetype)
+                       mimetype
+                       (caadr mimetype)))
+       if (string-match-p mime-type-regex mt)
+       return i
+       do (setq i (+ i 1)))))
 
 (defun maildir-open (filename)
   "Open the specified FILENAME."
@@ -507,29 +529,31 @@ This is probably bad but we should still read them."
    (list
     (plist-get (text-properties-at (point)) :filename)))
   (with-current-buffer (find-file-noselect filename)
-    (let* ((header
+    (let* ((end-of-header
+            (save-excursion
+              (re-search-forward "\n\n" nil t)))
+           (header
              (save-excursion
                (goto-char (point-min))
-               (maildir/msg-header-fix)
+               (maildir/msg-header-fix end-of-header)
                (mail-header-extract)))
            (content-type (mail-header-parse-content-type
                           (or (aget header 'content-type)
-                              "text/plain")))
-           (end-of-header
-            (save-excursion
-              (re-search-forward "\n\n" nil t))))
+                              "text/plain"))))
       ;; Decide what to do based on type
       (if (string-match "multipart/.*" (car content-type))
           (let ((parts (mm-dissect-buffer))
                 (parent-buffer-name (buffer-name)))
             (make-local-variable 'maildir-message-mm-parts)
             (setq maildir-message-mm-parts parts)
-            (maildir/message-open-part parent-buffer-name 1))
+            (maildir/message-open-part
+             parent-buffer-name (maildir/mimetype-index parts "text/.*")))
           ;; Else it's a normal mail
-          (when (equal
-                 (aget header 'content-transfer-encoding)
-                 "quoted-printable")
-            (quoted-printable-decode-region end-of-header (point-max)))
+          ;;
+          ;; FIXME why can't we find an mm- func that does what this does?
+          ;; - how do you dissect a non-multipart message to get a handle?
+          (maildir/display-inline
+           header content-type end-of-header (current-buffer))
           (switch-to-buffer (current-buffer))
           (maildir-message-mode)
           (setq maildir-message-header-end end-of-header)
