@@ -29,6 +29,7 @@
 
 (require 'mailheader)
 (require 'mm-decode)
+(require 'mm-view)
 (require 'rfc2047)
 (require 'ietf-drums)
 (require 'cl)
@@ -398,7 +399,7 @@ Each value is a number."
   (let ((head (car parts)))
     (if (and
          (stringp head)
-         (string-match "multipart/.*" head))
+         (string-match-p "multipart/.*" head))
         (maildir/get-main-part (elt parts 1))
         parts)))
 
@@ -415,6 +416,16 @@ Each value is a number."
                 ;; Else just the header-line
                 (concat header-line "\n"))))
 
+(defun maildir-message-part-next  ()
+  (interactive)
+  (maildir-message-open-another-part 'next))
+
+(defun maildir-message-part-prev  ()
+  (interactive)
+  (maildir-message-open-another-part 'previous))
+
+
+
 (defun maildir/message-open-part (parent-buffer-name part-number)
   (with-current-buffer (get-buffer parent-buffer-name)
     (let* ((header-end
@@ -424,45 +435,37 @@ Each value is a number."
            (header-text (buffer-substring (point-min) header-end))
            (parts maildir-message-mm-parts)
            (part (if (< part-number (length parts))
-                     (maildir/get-main-part parts)
+                     (elt parts part-number)
                      (error "maildir-message: No more parts!")))
            (part-desc (elt part 1))
+           (content-type (car part-desc))
            (charset (condition-case nil
                         (intern (downcase (aget (cdr part-desc) 'charset)))
                       (error nil)))
            (content-encoding (condition-case nil
                                  (elt part 2)
                                (error nil))))
-      (with-current-buffer
-          (get-buffer-create
-           (format "%s[%s]" parent-buffer-name part-number))
-        (let ((buffer-read-only nil))
-          (erase-buffer)
-          ;; Insert the message
-          (insert (maildir/formatted-header header-text))
-          (let ((end-of-header (point)))
-            (insert
-             (with-current-buffer (car part) ; the part buffer
-               (buffer-substring-no-properties
-                (point-min) (point-max))))
-            (when (eq content-encoding 'quoted-printable)
-              (quoted-printable-decode-region end-of-header (point-max)))
-            (when charset
-              (decode-coding-region (point-min) (point) charset))
-            (maildir-message-mode)
-            (local-set-key ">" (lambda ()
-                                 (interactive)
-                                 (maildir-message-open-another-part 1)))
-            (local-set-key "<" (lambda ()
-                                 (interactive)
-                                 (maildir-message-open-another-part -1)))
-            (switch-to-buffer (current-buffer))
-            ;; Make the local var to link us back and to other parts
-            (make-local-variable 'maildir-message-mm-parent-buffer-name)
-            (setq maildir-message-mm-parent-buffer-name parent-buffer-name)
-            (make-local-variable 'maildir-message-mm-part-number)
-            (setq maildir-message-mm-part-number part-number)
-            (goto-char end-of-header)))))))
+      (if (not (mm-inlinable-p part))
+          (mm-display-part part)
+          (with-current-buffer
+              (get-buffer-create
+               (format "%s[%s]" parent-buffer-name part-number))
+            (let ((buffer-read-only nil))
+              (erase-buffer)
+              ;; Insert the message
+              (insert (maildir/formatted-header header-text))
+              (let ((end-of-header (point)))
+                (mm-display-part part)
+                (maildir-message-mode)
+                (local-set-key ">" 'maildir-message-part-next)
+                (local-set-key "<" 'maildir-message-part-prev)
+                (switch-to-buffer (current-buffer))
+                ;; Make the local var to link us back and to other parts
+                (make-local-variable 'maildir-message-mm-parent-buffer-name)
+                (setq maildir-message-mm-parent-buffer-name parent-buffer-name)
+                (make-local-variable 'maildir-message-mm-part-number)
+                (setq maildir-message-mm-part-number part-number)
+                (goto-char end-of-header))))))))
 
 (defun maildir-message-open-another-part (&optional which)
   "Open a different part than this one.
