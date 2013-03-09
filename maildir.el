@@ -649,6 +649,7 @@ set to the list of overlays that isearch found."
   (setq buffer-read-only t)
   (unless maildir-mode/keymap-initialized-p
     (define-key maildir-mode-map "\r" 'maildir-open)
+    (define-key maildir-mode-map "F" 'maildir-find-file)
     (define-key maildir-mode-map "n" 'next-line)
     (define-key maildir-mode-map "p" 'previous-line)
     (define-key maildir-mode-map "\t" 'maildir-mode-next-field)
@@ -659,6 +660,11 @@ set to the list of overlays that isearch found."
     (define-key maildir-mode-map "m" 'maildir-move)
     (define-key maildir-mode-map "+" 'maildir-make-new)
     (setq maildir-mode/keymap-initialized-p t)))
+
+(defun maildir-find-file ()
+  "Find the message file at point."
+  (interactive)
+  (find-file (get-text-property (point) :filename)))
 
 ;;;###autoload
 (defun maildir-list (mail-dir &optional clear)
