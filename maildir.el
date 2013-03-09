@@ -533,7 +533,7 @@ This is probably bad but we should still read them."
     (decode-coding-region
      end-of-header-point (point-max)
      ;; The coding type
-     (intern (cdr (cadr content-type))))))
+     (intern (downcase (cdr (cadr content-type)))))))
 
 (defun maildir/mimetype-index (parts mime-type-regex)
   "Find the index of the specified MIME-TYPE-REGEX.
