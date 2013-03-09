@@ -49,7 +49,20 @@ a the mail. If you find a bug, obviously, report it to me.
 | //C-s ... M-m// | move everything matching the incremental search |
 | //q//           | quit                                            |
 | //r//           | pull from the remote and refresh                |
- 
+
+== Message view ==
+
+The maildir message view relies a lot on Emacs mail facilities. I just
+use
+the
+[[http://www.gnus.org/manual/emacs-mime_5.html#SEC5|mm- functions]].
+
+The {{{maildir-message-open}}} tries to find a sensible part to
+display. When viewing the message the following keys are added to
+{{{message-mode}}}:
+
+| > | view next part     |
+| > | view previous part |
 
 == Todo ==
 
@@ -57,9 +70,6 @@ a the mail. If you find a bug, obviously, report it to me.
 ** handling SEEN seems easy, just add something on open
 ** handling reply is harder, have to add a hook to mail send
 *** and some reference in the reply mail buffer to the original message filename?
-
-* handle {{{mail-header-extract}}} failure with headers without spaces
-** Just report it as a bug in Emacs?
 
 * allow choosing which maildir to list
 ** have maildir-list take an optional maildir directory
