@@ -91,45 +91,6 @@ and it should get reinitialized next time you make the mode.")
   :type 'hook
   :group 'maildir)
 
-(defun maildir-message-fill ()
-  "Allow filling of a paragraph even when read only.
-
-MDMUA message buffers are read only but paragraphs are sometimes
-not formatted properly so we provide this command to allow you to
-fill them.
-
-Also causes the buffer to be marked not modified."
-  (interactive)
-  (let ((buffer-read-only nil))
-    (fill-paragraph)
-    (set-buffer-modified-p nil)))
-
-(defvar maildir-message-header-end nil
-  "Buffer local end of header marker.")
-
-(define-derived-mode maildir-message-mode message-mode ;; parent
-  "Maildir Message"  ; name
-  "Maildir Msg \\{maildir-message-mode-map}" ; docstring
-  (unless maildir-message/keymap-initializedp
-    (define-key maildir-message-mode-map "\C-ca" 'message-reply)
-    (define-key maildir-message-mode-map "\C-cw" 'message-wide-reply)
-    (define-key maildir-message-mode-map "F" 'maildir-message-fill)
-    (define-key maildir-message-mode-map "q" 'kill-buffer)
-    ;;(define-key maildir-message-mode-map "p" 'mdmua-message-open-part)
-    (setq maildir-message/keymap-initializedp t))
-  ;;set the mode as a non-editor mode
-  (put 'maildir-message-mode 'mode-class 'special)
-  ;;ensure that paragraphs are considered to be whole mailing lists
-  (make-local-variable 'paragraph-start)
-  (setq paragraph-start paragraph-separate)
-  ;; make the local variable for the end of the header
-  (make-local-variable 'maildir-message-header-end)
-  ;;setup the buffer to be read only
-  ;; (make-local-variable 'buffer-read-only)
-  (setq buffer-read-only 't)
-  (set-buffer-modified-p nil)
-  ;;run the mode hooks
-  (run-hooks 'maildir-message-mode-hook))
 
 ;; Maildir parsing stuff
 
@@ -382,6 +343,70 @@ Each value is a number."
     (delete-file filename)))
 
 
+;; Mail viewing
+
+(defun maildir-message-fill ()
+  "Allow filling of a paragraph even when read only.
+
+MDMUA message buffers are read only but paragraphs are sometimes
+not formatted properly so we provide this command to allow you to
+fill them.
+
+Also causes the buffer to be marked not modified."
+  (interactive)
+  (let ((buffer-read-only nil))
+    (fill-paragraph)
+    (set-buffer-modified-p nil)))
+
+
+(defvar maildir-message-mm-parts nil
+  "List of parts of the message in this buffer.")
+(make-local-variable 'maildir-message-mm-parts)
+
+(defun maildir-message-part-info ()
+  "Tell the user about parts in the current bufffer."
+  (interactive)
+  (if (not (boundp 'maildir-message-mm-parts))
+    (message "there are no parts in this message")
+    (message
+     "message parts are: %s"
+     (let ((i 0))
+       (mapconcat
+        'identity
+        (loop for part in maildir-message-mm-parts
+           collect
+             (format "[%d] %s" i (if (listp part) (cadr part) part))
+           do (setq i (+ 1 i))) "\n")))))
+
+(defvar maildir-message-header-end nil
+  "Buffer local end of header marker.")
+
+(define-derived-mode maildir-message-mode message-mode ;; parent
+  "Maildir Message"  ; name
+  "Maildir Msg \\{maildir-message-mode-map}" ; docstring
+  (unless maildir-message/keymap-initializedp
+    (define-key maildir-message-mode-map "\C-ca" 'message-reply)
+    (define-key maildir-message-mode-map "\C-cw" 'message-wide-reply)
+    (define-key maildir-message-mode-map "F" 'maildir-message-fill)
+    (define-key maildir-message-mode-map "q" 'kill-buffer)
+    (define-key maildir-message-mode-map "i" 'maildir-message-part-info)
+    ;;(define-key maildir-message-mode-map "p" 'mdmua-message-open-part)
+    (setq maildir-message/keymap-initializedp t))
+  ;;set the mode as a non-editor mode
+  (put 'maildir-message-mode 'mode-class 'special)
+  ;;ensure that paragraphs are considered to be whole mailing lists
+  (make-local-variable 'paragraph-start)
+  (setq paragraph-start paragraph-separate)
+  ;; make the local variable for the end of the header
+  (make-local-variable 'maildir-message-header-end)
+  ;;setup the buffer to be read only
+  ;; (make-local-variable 'buffer-read-only)
+  (setq buffer-read-only 't)
+  (set-buffer-modified-p nil)
+  ;;run the mode hooks
+  (run-hooks 'maildir-message-mode-hook))
+
+
 ;; Multipart buffer locals
 
 (defvar maildir-message-mm-parent-buffer-name nil
@@ -416,8 +441,6 @@ Each value is a number."
   (interactive)
   (maildir-message-open-another-part 'previous))
 
-
-
 (defun maildir/message-open-part (parent-buffer-name part-number)
   (with-current-buffer (get-buffer parent-buffer-name)
     (let* ((header-end
@@ -442,6 +465,11 @@ Each value is a number."
           (with-current-buffer
               (get-buffer-create
                (format "%s[%s]" parent-buffer-name part-number))
+            ;; Copy the parts from the parent buffer
+            (setq maildir-message-mm-parts
+                  (with-current-buffer (get-buffer parent-buffer-name)
+                    maildir-message-mm-parts))
+            ;; Insert the content
             (let ((buffer-read-only nil))
               (erase-buffer)
               ;; Insert the message
@@ -544,7 +572,6 @@ where the cadr is the mime-type."
       (if (string-match "multipart/.*" (car content-type))
           (let ((parts (mm-dissect-buffer))
                 (parent-buffer-name (buffer-name)))
-            (make-local-variable 'maildir-message-mm-parts)
             (setq maildir-message-mm-parts parts)
             (maildir/message-open-part
              parent-buffer-name (maildir/mimetype-index parts "text/.*")))
