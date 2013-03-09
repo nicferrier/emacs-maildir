@@ -530,10 +530,11 @@ This is probably bad but we should still read them."
            "quoted-printable")
       (quoted-printable-decode-region
        end-of-header-point (point-max)))
-    (decode-coding-region
-     end-of-header-point (point-max)
-     ;; The coding type
-     (intern (downcase (cdr (cadr content-type)))))))
+    (let ((encoding (cdr (cadr content-type))))
+      (when encoding
+        (decode-coding-region
+         end-of-header-point (point-max)
+         (intern (downcase encoding)))))))
 
 (defun maildir/mimetype-index (parts mime-type-regex)
   "Find the index of the specified MIME-TYPE-REGEX.
