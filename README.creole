@@ -63,6 +63,7 @@ display. When viewing the message the following keys are added to
 
 | > | view next part     |
 | > | view previous part |
+| i | view part list     |
 
 == Todo ==
 
