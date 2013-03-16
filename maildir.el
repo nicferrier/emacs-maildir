@@ -34,6 +34,7 @@
 (require 'ietf-drums)
 (require 'cl)
 (require 'assoc)
+(require 'json)
 
 (defgroup maildir nil
   "The Maildir mail user agent application."
@@ -110,9 +111,13 @@ changes the value in some way."
         'encode-time
         (parse-time-string header-value))))
      ((memq header-name '(from to))
-      (let* ((addr (condition-case err
-                       (ietf-drums-parse-address header-value)
-                     (error (cons "" ""))))
+      (let* ((addr
+              (condition-case err
+                  (ietf-drums-parse-address header-value)
+                (error
+                 (progn
+                   (message "maildir/index-header-parse %s" err)
+                   (cons "" "")))))
              (address (or (car addr) ""))
              (name (or (cdr addr) "")))
         (list (list (cons 'address address) (cons 'name name)))))
@@ -452,15 +457,7 @@ Also causes the buffer to be marked not modified."
            (parts maildir-message-mm-parts)
            (part (if (< part-number (length parts))
                      (elt parts part-number)
-                     (error "maildir-message: No more parts!")))
-           (part-desc (cdr (elt part 1)))
-           (content-type (car part-desc))
-           (charset (condition-case nil
-                        (intern (downcase (aget (cdr part-desc) 'charset)))
-                      (error nil)))
-           (content-encoding (condition-case nil
-                                 (elt part 2)
-                               (error nil))))
+                     (error "maildir-message: No more parts!"))))
       (if (not (mm-inlinable-p part))
           (mm-display-part part)
           (with-current-buffer
