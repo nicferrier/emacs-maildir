@@ -453,7 +453,7 @@ Also causes the buffer to be marked not modified."
            (part (if (< part-number (length parts))
                      (elt parts part-number)
                      (error "maildir-message: No more parts!")))
-           (part-desc (elt part 1))
+           (part-desc (cdr (elt part 1)))
            (content-type (car part-desc))
            (charset (condition-case nil
                         (intern (downcase (aget (cdr part-desc) 'charset)))
@@ -537,6 +537,15 @@ This is probably bad but we should still read them."
          end-of-header-point (point-max)
          (intern (downcase encoding)))))))
 
+(defun maildir/flatten-parts (part)
+  (let ((sign (car part)))
+    (if (and (stringp sign)
+             (string-match-p "multipart/.*" sign))
+        (loop for p in (cdr part)
+           append (maildir/flatten-parts p))
+        ;; else
+        (list part))))
+
 (defun maildir/mimetype-index (parts mime-type-regex)
   "Find the index of the specified MIME-TYPE-REGEX.
 
@@ -544,12 +553,8 @@ PARTS is a part list as returned by `mm-disect-buffer'.  Each
 part is either a string mime-type or a list describing a part
 where the cadr is the mime-type."
   (let ((i 0))
-    (loop for mimetype in parts
-       with mt
-       do (setq mt (if (stringp mimetype)
-                       mimetype
-                       (caadr mimetype)))
-       if (string-match-p mime-type-regex mt)
+    (loop for part in parts
+       if (string-match-p mime-type-regex (caadr part))
        return i
        do (setq i (+ i 1)))))
 
@@ -572,11 +577,12 @@ where the cadr is the mime-type."
                               "text/plain"))))
       ;; Decide what to do based on type
       (if (string-match "multipart/.*" (car content-type))
-          (let ((parts (mm-dissect-buffer))
-                (parent-buffer-name (buffer-name)))
-            (setq maildir-message-mm-parts parts)
+          (let* ((parts (mm-dissect-buffer))
+                 (pl (maildir/flatten-parts parts))
+                 (parent-buffer-name (buffer-name)))
+            (setq maildir-message-mm-parts pl)
             (maildir/message-open-part
-             parent-buffer-name (maildir/mimetype-index parts "text/.*")))
+             parent-buffer-name (maildir/mimetype-index pl "text/.*")))
           ;; Else it's a normal mail
           ;;
           ;; FIXME why can't we find an mm- func that does what this does?
