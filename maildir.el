@@ -528,7 +528,8 @@ This is probably bad but we should still read them."
            "quoted-printable")
       (quoted-printable-decode-region
        end-of-header-point (point-max)))
-    (let ((encoding (cdr (cadr content-type))))
+    (let ((encoding (cdr (cadr content-type)))
+          (buffer-read-only nil))
       (when encoding
         (decode-coding-region
          end-of-header-point (point-max)
