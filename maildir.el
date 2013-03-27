@@ -530,10 +530,14 @@ This is probably bad but we should still read them."
        end-of-header-point (point-max)))
     (let ((encoding (cdr (cadr content-type)))
           (buffer-read-only nil))
+      ;; Not sure whether to mark the region encoded so we don't have
+      ;; to do it again
       (when encoding
-        (decode-coding-region
-         end-of-header-point (point-max)
-         (intern (downcase encoding)))))))
+        (condition-case err
+            (decode-coding-region
+             end-of-header-point (point-max)
+             (intern (downcase encoding)))
+          (error (message "maildir/display-inline encode error -- %S" err)))))))
 
 (defun maildir/flatten-parts (part)
   (let ((sign (car part)))
