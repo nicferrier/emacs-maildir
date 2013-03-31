@@ -317,16 +317,32 @@ Each value is a number."
 (defun maildir/format-date (date-list)
   (apply 'format "%4d-%02d-%02d %02d:%02d:%02d" date-list))
 
+(defvar maildir/from-colors (make-hash-table :test 'equal)
+  "Hash of emails to colors.")
+
 (defun maildir/hdr->summary (hdr-alist)
   (propertize
    (format
     "%s  %35s  %s"
-    (maildir/format-date (maildir/parse-date (cdr (assq 'date hdr-alist))))
-    (let ((from (cadr (assq 'from hdr-alist))))
-      (rfc2047-decode-string (aget from 'address)))
+    (propertize
+     (maildir/format-date (maildir/parse-date (cdr (assq 'date hdr-alist))))
+     'face 'message-header-other)
+    (let* ((from (cadr (assq 'from hdr-alist)))
+           (addr (aget from 'address))
+           (existing-color (gethash addr maildir/from-colors))
+           (color (if existing-color
+                      existing-color
+                      (let ((new-color (format "#%x" (random #xffffff))))
+                        (puthash addr new-color maildir/from-colors)
+                         new-color))))
+      (propertize
+       (rfc2047-decode-string (aget from 'address))
+       'face `(:foreground ,color)))
     (let ((subject (cdr (assq 'subject hdr-alist))))
       (if subject
-          (rfc2047-decode-string subject)
+          (propertize
+           (rfc2047-decode-string subject)
+           'face 'message-header-subject)
           "")))
    :filename (aget hdr-alist 'file)))
 
