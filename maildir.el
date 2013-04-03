@@ -6,7 +6,7 @@
 ;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
 ;; Keywords: mail, files
 ;; Url: http://github.com/nicferrier/emacs-maildir
-;; Version: 0.0.13
+;; Version: 0.0.14
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -594,7 +594,7 @@ where the cadr is the mime-type."
                           (or (aget header 'content-type)
                               "text/plain"))))
       ;; Decide what to do based on type
-      (if (string-match "multipart/.*" (car content-type))
+      (if (string-match-p "multipart/.*" (car content-type))
           (let* ((parts (mm-dissect-buffer))
                  (pl (maildir/flatten-parts parts))
                  (parent-buffer-name (buffer-name)))
