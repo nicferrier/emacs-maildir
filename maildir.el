@@ -463,6 +463,21 @@ Also causes the buffer to be marked not modified."
   (interactive)
   (maildir-message-open-another-part 'previous))
 
+(defun maildir/message-open-external-part (part)
+  "Open PART that cannot be inlined."
+  (let* ((filename
+          (or
+           (mail-content-type-get
+            (mm-handle-disposition part) 'filename)
+           (mail-content-type-get
+            (mm-handle-type part) 'name)))
+         (path (concat "~/Downloads/"
+                       (file-name-nondirectory filename))))
+    (with-temp-buffer 
+      (mm-insert-part part)
+      (write-file path))
+    (find-file path)))
+
 (defun maildir/message-open-part (parent-buffer-name part-number)
   (with-current-buffer (get-buffer parent-buffer-name)
     (let* ((header-end
@@ -475,7 +490,7 @@ Also causes the buffer to be marked not modified."
                      (elt parts part-number)
                      (error "maildir-message: No more parts!"))))
       (if (not (mm-inlinable-p part))
-          (mm-display-part part)
+          (maildir/message-open-external-part part)
           (with-current-buffer
               (get-buffer-create
                (format "%s[%s]" parent-buffer-name part-number))
@@ -521,6 +536,16 @@ specific part.  The default is `next'."
       (+ maildir-message-mm-part-number which))
      (t
       (+ 1 maildir-message-mm-part-number)))))
+
+
+(defun maildir-part-open (part-num)
+  "Open the specified PART-NUM."
+  (interactive
+   (list
+    (string-to-int (read-from-minibuffer "part: "))))
+  (maildir/message-open-part
+   maildir-message-mm-parent-buffer-name
+   part-num))
 
 (defun maildir/msg-header-fix (end-of-header-pt)
   "Fix `mail-header-extract'.
