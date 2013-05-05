@@ -6,7 +6,7 @@
 ;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
 ;; Keywords: mail, files
 ;; Url: http://github.com/nicferrier/emacs-maildir
-;; Version: 0.0.14
+;; Version: 0.0.15.1
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
