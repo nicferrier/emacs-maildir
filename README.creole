@@ -4,8 +4,7 @@ This is a maildir based mail user agent for Emacs.
 
 The basic idea is:
 
-* you pull new files from a remote MTA's maildir with SSH/rsync
-** requires that you can run shell commands at the remote MTA
+* you pull new files from a remote MTA's maildir with SSH/rsync (or some other method)
 * Emacs manages the local maildir using a cache directory
 
 The maildir flow looks like this:
@@ -17,6 +16,23 @@ The maildir flow looks like this:
 
 Finally, you can use the command //maildir-list// to generate a buffer
 with a listing of your current maildir in.
+
+
+== New mail pulling ==
+
+I am implementing IMAP pulling for this using the GNUs IMAP
+library. The idea is that you can spawn a separate Emacs instance to
+establish a connection to your IMAP server (or even, many IMAP
+servers) and pull your mail to your maildir.
+
+The Emacs instance you actually use can then poll that maildir (by
+checking the maildir's {{{new}}} directory) and inform you when there
+is new mail to collect (or just collect it and inform you, since it's
+quite cheap).
+
+The expensive, blocking part, of talking to the IMAP server is kept in
+the second Emacs instance. Hopefully we can also do things like detect
+when the server connection is broken and flag that.
 
 
 == Maildir management ==
