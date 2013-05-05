@@ -1,0 +1,7 @@
+(maildir
+ :doc "Simple maildir based MUA."
+ :version "0.0.16"
+ :files
+ ("maildir.el"
+  "maildir-imap.el"
+  "maildir-message-handlers.el"))
