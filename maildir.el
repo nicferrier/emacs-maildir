@@ -551,7 +551,7 @@ specific part.  The default is `next'."
   "Open the specified PART-NUM."
   (interactive
    (list
-    (string-to-int (read-from-minibuffer "part: "))))
+    (string-to-number (read-from-minibuffer "part: "))))
   (maildir/message-open-part
    maildir-message-mm-parent-buffer-name
    part-num))
