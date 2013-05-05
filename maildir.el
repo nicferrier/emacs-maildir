@@ -512,6 +512,7 @@ Also causes the buffer to be marked not modified."
               ;; Insert the message
               (insert (maildir/formatted-header header-text))
               (let ((end-of-header (point)))
+                (setq maildir-message-header-end end-of-header)
                 (mm-display-part part)
                 (maildir-message-mode)
                 (local-set-key ">" 'maildir-message-part-next)
