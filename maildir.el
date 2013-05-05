@@ -51,6 +51,14 @@
   :group 'maildir
   :type 'directory)
 
+(defcustom maildir-downloads-dir "~/Downloads/"
+  "The location of the directory to download files to.
+
+Mail parts that cannot be directly inlined in a buffer are saved
+to this directory."
+  :group 'maildir
+  :type 'directory)
+
 (defcustom maildir-remote-host ""
   "The host to connect to to find emails."
   :group 'maildir
@@ -471,7 +479,7 @@ Also causes the buffer to be marked not modified."
             (mm-handle-disposition part) 'filename)
            (mail-content-type-get
             (mm-handle-type part) 'name)))
-         (path (concat "~/Downloads/"
+         (path (concat maildir-downloads-dir
                        (file-name-nondirectory filename))))
     (with-temp-buffer 
       (mm-insert-part part)
