@@ -46,36 +46,41 @@ We do this to preserve the i-node of the created file."
 
 (defun maildir/imap-sync (maildir)
   (interactive)
-  ;; Reconnect to imap if necessary
-  (unless (eq 'run
-              (condition-case nil
-                  (process-status
-                   (get-buffer-process
-                    maildir/imap-connection))
-                (error nil)))
-    (setq maildir/imap-connection
-          (imap-open "imap.gmail.com" 993 'ssl 'login))
-    (imap-login-auth maildir/imap-connection)
-    (imap-mailbox-select "INBOX" t maildir/imap-connection)
-    (imap-mailbox-status "INBOX" 'messages maildir/imap-connection))
-  (mapcar
-   (lambda (msg)
-     (with-temp-buffer
-       (destructuring-bind (file filename)
-           (maildir/new-filename maildir)
-         (let ((new-filename
-                (expand-file-name
-                 (format "%snew/%s"
-                         (file-name-as-directory maildir) filename)))
-               (coding-system-for-write 'no-conversion))
-           (insert (imap-fetch
-                    msg "(RFC822)" 'RFC822 nil
-                    maildir/imap-connection))
-           (rename-file file new-filename)
-           (write-file new-filename)))))
-   (imap-search
-    (format "SINCE %s" (maildir/imap-month-ago))
-    maildir/imap-connection)))
+  (if (not maildir/imap-source)
+      (error "no `maildir/imap-source' is configured, configure one to sync.")
+      ;; Reconnect to imap if necessary
+      (unless (eq 'run
+                  (condition-case nil
+                      (process-status
+                       (get-buffer-process
+                        maildir/imap-connection))
+                    (error nil)))
+        (setq maildir/imap-connection
+              (imap-open
+               maildir/imap-source
+               ;; TODO: How to get this dependant on the maildir/imap-source?
+               993 'ssl 'login))
+        (imap-login-auth maildir/imap-connection)
+        (imap-mailbox-select "INBOX" t maildir/imap-connection)
+        (imap-mailbox-status "INBOX" 'messages maildir/imap-connection))
+      (mapcar
+       (lambda (msg)
+         (with-temp-buffer
+           (destructuring-bind (file filename)
+               (maildir/new-filename maildir)
+             (let ((new-filename
+                    (expand-file-name
+                     (format "%snew/%s"
+                             (file-name-as-directory maildir) filename)))
+                   (coding-system-for-write 'no-conversion))
+               (insert (imap-fetch
+                        msg "(RFC822)" 'RFC822 nil
+                        maildir/imap-connection))
+               (rename-file file new-filename)
+               (write-file new-filename)))))
+       (imap-search
+        (format "SINCE %s" (maildir/imap-month-ago))
+        maildir/imap-connection))))
 
 ;;(maildir/imap-sync "~/mymaildir/var/maildir/nferrier")
 
