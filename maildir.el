@@ -337,11 +337,11 @@ Each value is a number."
      'face 'message-header-other)
     (let* ((from (cadr (assq 'from hdr-alist)))
            (addr (aget from 'address))
-           (existing-color (gethash addr maildir/from-colors))
+           (existing-color (gethash (downcase addr) maildir/from-colors))
            (color (if existing-color
                       existing-color
                       (let ((new-color (format "#%x" (random #xffffff))))
-                        (puthash addr new-color maildir/from-colors)
+                        (puthash (downcase addr) new-color maildir/from-colors)
                          new-color))))
       (propertize
        (rfc2047-decode-string (aget from 'address))
