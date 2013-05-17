@@ -65,8 +65,9 @@ We do this to preserve the i-node of the created file."
            ;; TODO: How to get this dependant on the maildir/imap-source?
            993 'ssl 'login))
     (imap-login-auth maildir/imap-connection)
-    (imap-mailbox-select "INBOX" t maildir/imap-connection)
-    (imap-mailbox-status "INBOX" 'messages maildir/imap-connection)))
+    (let ((count (imap-mailbox-status ; we don't do this for any reason right now
+                  "INBOX" 'messages maildir/imap-connection)))
+      (imap-mailbox-select "INBOX" t maildir/imap-connection))))
 
 (defun maildir/imap-search ()
   "Do the IMAP search for maildir.
