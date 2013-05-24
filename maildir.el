@@ -6,7 +6,7 @@
 ;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
 ;; Keywords: mail, files
 ;; Url: http://github.com/nicferrier/emacs-maildir
-;; Version: 0.0.15.1
+;; Version: 0.0.16
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -486,6 +486,20 @@ Also causes the buffer to be marked not modified."
       (write-file path))
     (find-file path)))
 
+(defun maildir/linkize (buffer)
+  "Convert links inside BUFFER into clickable buttons."
+  (with-current-buffer buffer
+    (switch-to-buffer buffer)
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward "http://[^ \t\n]+" nil t)
+        (let ((url (match-string 0)))
+          (replace-match "")
+          (insert-button
+           url 'action
+           (lambda (x) (browse-url url))
+           'follow-link t))))))
+
 (defun maildir/message-open-part (parent-buffer-name part-number)
   (with-current-buffer (get-buffer parent-buffer-name)
     (let* ((header-end
@@ -514,6 +528,7 @@ Also causes the buffer to be marked not modified."
               (let ((end-of-header (point)))
                 (setq maildir-message-header-end end-of-header)
                 (mm-display-part part)
+                (maildir/linkize (current-buffer))
                 (maildir-message-mode)
                 (local-set-key ">" 'maildir-message-part-next)
                 (local-set-key "<" 'maildir-message-part-prev)
