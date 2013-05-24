@@ -487,17 +487,17 @@ Also causes the buffer to be marked not modified."
 
 (defun maildir/linkize (buffer)
   "Convert links inside BUFFER into clickable buttons."
-  (with-current-buffer buffer
-    (switch-to-buffer buffer)
-    (save-excursion
-      (goto-char (point-min))
-      (while (re-search-forward "http://[^ \t\n]+" nil t)
-        (let ((url (match-string 0)))
-          (replace-match "")
-          (insert-button
-           url 'action
-           (lambda (x) (browse-url url))
-           'follow-link t))))))
+  (set-buffer buffer)
+  (goto-char (point-min))
+  (while (re-search-forward "http://[^ \t\n]+" nil t)
+    (let ((url (match-string 0))
+	  (beg (match-beginning 0))
+	  (end (match-end 0)))
+      (make-text-button
+       beg end
+       'label url
+       'action (lambda (x) (browse-url url))
+       'follow-link t))))
 
 (defun maildir/message-open-part (parent-buffer-name part-number)
   (with-current-buffer (get-buffer parent-buffer-name)
