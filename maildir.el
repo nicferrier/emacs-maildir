@@ -490,7 +490,7 @@ Also causes the buffer to be marked not modified."
   (with-current-buffer buffer
     (save-excursion
       (goto-char (point-min))
-      (while (re-search-forward "http://[^ \t\n]+" nil t)
+      (while (re-search-forward "http[s]*://[^ \t\n]+" nil t)
         (let ((url (match-string 0))
               (beg (match-beginning 0))
               (end (match-end 0)))
