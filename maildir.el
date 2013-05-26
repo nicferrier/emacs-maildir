@@ -508,6 +508,7 @@ Also causes the buffer to be marked not modified."
               (re-search-forward "\n\n" nil t)))
            (header-text (buffer-substring (point-min) header-end))
            (parts maildir-message-mm-parts)
+           (gnus-inhibit-images nil) ; hack for a gnus problem
            (part (if (< part-number (length parts))
                      (elt parts part-number)
                      (error "maildir-message: No more parts!"))))
