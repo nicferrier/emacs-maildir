@@ -529,7 +529,6 @@ Also causes the buffer to be marked not modified."
               (let ((end-of-header (point)))
                 (setq maildir-message-header-end end-of-header)
                 (mm-display-part part)
-                (maildir/linkize (current-buffer))
                 (maildir-message-mode)
                 (local-set-key ">" 'maildir-message-part-next)
                 (local-set-key "<" 'maildir-message-part-prev)
@@ -603,7 +602,8 @@ This is probably bad but we should still read them."
             (decode-coding-region
              end-of-header-point (point-max)
              (intern (downcase encoding)))
-          (error (message "maildir/display-inline encode error -- %S" err)))))))
+          (error (message "maildir/display-inline encode error -- %S" err))))
+      (maildir/linkize (current-buffer)))))
 
 (defun maildir/flatten-parts (part)
   (let ((sign (car part)))
