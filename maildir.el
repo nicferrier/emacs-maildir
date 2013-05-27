@@ -529,6 +529,7 @@ Also causes the buffer to be marked not modified."
               (let ((end-of-header (point)))
                 (setq maildir-message-header-end end-of-header)
                 (mm-display-part part)
+                (maildir/linkize (current-buffer))
                 (maildir-message-mode)
                 (local-set-key ">" 'maildir-message-part-next)
                 (local-set-key "<" 'maildir-message-part-prev)
