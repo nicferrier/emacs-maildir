@@ -562,7 +562,6 @@ specific part.  The default is `next'."
      (t
       (+ 1 maildir-message-mm-part-number)))))
 
-
 (defun maildir-part-open (part-num)
   "Open the specified PART-NUM."
   (interactive
