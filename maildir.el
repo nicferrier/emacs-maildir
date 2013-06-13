@@ -414,7 +414,7 @@ Also causes the buffer to be marked not modified."
   "Maildir Message"  ; name
   "Maildir Msg \\{maildir-message-mode-map}" ; docstring
   (unless maildir-message/keymap-initializedp
-    (define-key maildir-message-mode-map "\C-ca" 'message-reply)
+    (define-key maildir-message-mode-map "\C-cr" 'message-reply)
     (define-key maildir-message-mode-map "\C-cw" 'message-wide-reply)
     (define-key maildir-message-mode-map "F" 'maildir-message-fill)
     (define-key maildir-message-mode-map "q" 'kill-buffer)
