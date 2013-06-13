@@ -430,7 +430,7 @@ Also causes the buffer to be marked not modified."
   (make-local-variable 'maildir-message-header-end)
   ;;setup the buffer to be read only
   ;; (make-local-variable 'buffer-read-only)
-  (setq buffer-read-only 't)
+  (setq buffer-read-only t)
   (set-buffer-modified-p nil)
   ;;run the mode hooks
   (run-hooks 'maildir-message-mode-hook))
@@ -522,24 +522,26 @@ Also causes the buffer to be marked not modified."
                   (with-current-buffer (get-buffer parent-buffer-name)
                     maildir-message-mm-parts))
             ;; Insert the content
-            (let ((buffer-read-only nil))
-              (erase-buffer)
-              ;; Insert the message
-              (insert (maildir/formatted-header header-text))
-              (let ((end-of-header (point)))
+            (let (end-of-header)
+              (let ((buffer-read-only nil))
+                (erase-buffer)
+                ;; Insert the message
+                (insert (maildir/formatted-header header-text))
+                (setq end-of-header (point))
                 (setq maildir-message-header-end end-of-header)
                 (mm-display-part part)
-                (maildir/linkize (current-buffer))
-                (maildir-message-mode)
-                (local-set-key ">" 'maildir-message-part-next)
-                (local-set-key "<" 'maildir-message-part-prev)
-                (switch-to-buffer (current-buffer))
-                ;; Make the local var to link us back and to other parts
-                (make-local-variable 'maildir-message-mm-parent-buffer-name)
-                (setq maildir-message-mm-parent-buffer-name parent-buffer-name)
-                (make-local-variable 'maildir-message-mm-part-number)
-                (setq maildir-message-mm-part-number part-number)
-                (goto-char end-of-header))))))))
+                (maildir/linkize (current-buffer)))
+              ;; Now stuff that needs to happen with the ability to set buffer-read-only
+              (maildir-message-mode)
+              (local-set-key ">" 'maildir-message-part-next)
+              (local-set-key "<" 'maildir-message-part-prev)
+              (switch-to-buffer (current-buffer))
+              ;; Make the local var to link us back and to other parts
+              (make-local-variable 'maildir-message-mm-parent-buffer-name)
+              (setq maildir-message-mm-parent-buffer-name parent-buffer-name)
+              (make-local-variable 'maildir-message-mm-part-number)
+              (setq maildir-message-mm-part-number part-number)
+              (goto-char end-of-header)))))))
 
 (defun maildir-message-open-another-part (&optional which)
   "Open a different part than this one.
