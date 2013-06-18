@@ -89,6 +89,11 @@ display. When viewing the message the following keys are added to
 
 == Todo ==
 
+* `maildir/message-open-external-part' needs to have a sentinel on the command
+** when you open a part with a specific viewer it uses an async shell command
+** but the buffers are left around when the command is killed
+** just add a sentinel to destroy the buffers if/when the command dies
+
 * implement SEEN/READ/REPLIED state
 ** handling SEEN seems easy, just add something on open
 ** handling reply is harder, have to add a hook to mail send
