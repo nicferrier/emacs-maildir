@@ -564,11 +564,35 @@ specific part.  The default is `next'."
      (t
       (+ 1 maildir-message-mm-part-number)))))
 
-(defun maildir-part-open (part-num)
-  "Open the specified PART-NUM."
+(defun maildir/simplify-part-list (part-list)
+  "Make the part list simple enough to present the user."
+  (let ((simple-1
+         (loop for (buffer . part) in part-list
+            collect
+              (cons
+               buffer
+               (format "%s" (car part))))))
+    (mapcar
+     (lambda (p) (cons (cdr p) (car p)))
+     simple-1)))
+
+(defun maildir-part-open (part-num &optional how)
+  "Open the specified PART-NUM.
+
+When used interactively `completing-read's the part list to allow
+selection of a part."
   (interactive
-   (list
-    (string-to-number (read-from-minibuffer "part: "))))
+   (let* ((c-list
+           (maildir/simplify-part-list
+            maildir-message-mm-parts))
+          (part (completing-read "Part: " c-list)))
+     (list
+      (loop for e in (kvalist->keys c-list)
+         with count = 0
+         do (incf count)
+         if (equal e part)
+         return (- count 1))
+      current-prefix-arg)))
   (maildir/message-open-part
    maildir-message-mm-parent-buffer-name
    part-num))
