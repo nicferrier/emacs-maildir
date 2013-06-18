@@ -472,8 +472,11 @@ Also causes the buffer to be marked not modified."
   (interactive)
   (maildir-message-open-another-part 'previous))
 
-(defun maildir/message-open-external-part (part)
-  "Open PART that cannot be inlined."
+(defun maildir/message-open-external-part (part &optional how)
+  "Open PART that cannot be inlined.
+
+HOW, if present, should be a string viewer, from mailcap say.
+The HOW, if present, is treated as a shell command and executed."
   (let* ((filename
           (or
            (mail-content-type-get
@@ -485,7 +488,14 @@ Also causes the buffer to be marked not modified."
     (with-temp-buffer 
       (mm-insert-part part)
       (write-file path))
-    (find-file path)))
+    (if how
+        (let ((resolved-file (expand-file-name path)))
+          (start-process-shell-command
+           (format "*maildir-open-command-%s*" resolved-file)
+           (format "*maildir-open-command-%s*" resolved-file)
+           (format how resolved-file)))
+        ;; Else there was no how, just open it
+        (find-file path))))
 
 (defun maildir/linkize (buffer)
   "Convert links inside BUFFER into clickable buttons."
@@ -506,6 +516,7 @@ Also causes the buffer to be marked not modified."
                                              parts
                                              part-number
                                              header-text)
+  "If a part is inlineable this is how it's opened."
   (let ((part (elt parts part-number))
         (part-buffer-name (format
                            "%s[%s]"
@@ -594,6 +605,20 @@ specific part.  The default is `next'."
      (lambda (p) (cons (cdr p) (car p)))
      simple-1)))
 
+(defun maildir/part-desc->part-idx (part-desc parts)
+  (loop for e in (kvalist->keys parts)
+     with count = 0
+     do (incf count)
+     if (equal e part-desc)
+     return (- count 1)))
+
+(defun maildir/list-mailcap-viewers (parts idx)
+  (let* ((mte (cadr (elt parts idx)))
+         (mt (split-string (car mte) "/"))
+         (info (kva (car mt) mailcap-mime-data))
+         (viewers (mailcap-possible-viewers info (cadr mt))))
+    viewers))
+
 (defun maildir-part-open (part-num &optional how)
   "Open the specified PART-NUM.
 
@@ -603,17 +628,25 @@ selection of a part."
    (let* ((c-list
            (maildir/simplify-part-list
             maildir-message-mm-parts))
-          (part (completing-read "Part: " c-list)))
+          (part (completing-read "Part: " c-list))
+          (idx (maildir/part-desc->part-idx part c-list)))
      (list
-      (loop for e in (kvalist->keys c-list)
-         with count = 0
-         do (incf count)
-         if (equal e part)
-         return (- count 1))
-      current-prefix-arg)))
-  (maildir/message-open-part
-   maildir-message-mm-parent-buffer-name
-   part-num))
+      idx
+      (when current-prefix-arg
+        (completing-read
+         "How: "
+         (mapcar
+          (lambda (l)
+            (cons  (kva 'viewer l) l))
+          (maildir/list-mailcap-viewers
+           maildir-message-mm-parts idx)))))))
+  (if how
+      (maildir/message-open-external-part
+       (elt maildir-message-mm-parts part-num) how)
+      ;; Else no specific how so work it out
+      (maildir/message-open-part
+       maildir-message-mm-parent-buffer-name
+       part-num)))
 
 (defun maildir/msg-header-fix (end-of-header-pt)
   "Fix `mail-header-extract'.
