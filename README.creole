@@ -77,11 +77,14 @@ The {{{maildir-message-open}}} tries to find a sensible part to
 display. When viewing the message the following keys are added to
 {{{message-mode}}}:
 
-| >     | view next part                                  |
-| >     | view previous part                              |
-| i     | view part list                                  |
-| O     | open a part by completing-read on the part list |
-| C-u O | specify a viewer for a part                     |
+| //F//     | fill the message                                |
+| //>//     | view next part                                  |
+| //>//     | view previous part                              |
+| //i//     | view part list                                  |
+| //O//     | open a part by completing-read on the part list |
+| //C-u O// | specify a viewer for a part                     |
+| //C-c w// | wide reply                                      |
+| //C-c r// | direct reply                                    |
 
 
 == Todo ==
