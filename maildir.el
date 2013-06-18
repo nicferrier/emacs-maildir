@@ -500,7 +500,49 @@ Also causes the buffer to be marked not modified."
            'action (lambda (x) (browse-url url))
            'follow-link t))))))
 
-(defun maildir/message-open-part (parent-buffer-name part-number)
+(defun maildir/message-open-inlineable-part (parent-buffer-name
+                                             parts
+                                             part-number
+                                             header-text)
+  (let ((part (elt parts part-number))
+        (part-buffer-name (format
+                           "%s[%s]"
+                           parent-buffer-name
+                           part-number)))
+    (with-current-buffer (get-buffer-create part-buffer-name)
+      ;; Copy the parent buffer's parts list
+      (setq maildir-message-mm-parts parts)
+      ;; Insert the content
+      (let (end-of-header)
+        (let ((buffer-read-only nil))
+          (erase-buffer)
+          ;; Insert the message
+          (insert (maildir/formatted-header header-text))
+          (setq end-of-header (point))
+          (setq maildir-message-header-end end-of-header)
+          (mm-display-part part)
+          (maildir/linkize (current-buffer)))
+        ;; Now stuff that needs to happen with the ability to set buffer-read-only
+        (maildir-message-mode)
+        (local-set-key ">" 'maildir-message-part-next)
+        (local-set-key "<" 'maildir-message-part-prev)
+        (switch-to-buffer (current-buffer))
+        ;; Make the local var to link us back and to other parts
+        (make-local-variable 'maildir-message-mm-parent-buffer-name)
+        (setq maildir-message-mm-parent-buffer-name parent-buffer-name)
+        (make-local-variable 'maildir-message-mm-part-number)
+        (setq maildir-message-mm-part-number part-number)
+        (goto-char end-of-header)))))
+
+(defun maildir/message-open-part (parent-buffer-name part-number
+                                  &optional how)
+  "Open the specified PART-NUMBER from the PARENT-BUFFER-NAME.
+
+The parts are referenced by the buffer local variable
+`maildir-message-mm-parts' in the specified PARENT-BUFFER-NAME.
+
+HOW optionally specifies how to open the part and may be a
+mailcap reference."
   (with-current-buffer (get-buffer parent-buffer-name)
     (let* ((header-end
             (save-excursion
@@ -514,34 +556,8 @@ Also causes the buffer to be marked not modified."
                      (error "maildir-message: No more parts!"))))
       (if (not (mm-inlinable-p part))
           (maildir/message-open-external-part part)
-          (with-current-buffer
-              (get-buffer-create
-               (format "%s[%s]" parent-buffer-name part-number))
-            ;; Copy the parts from the parent buffer
-            (setq maildir-message-mm-parts
-                  (with-current-buffer (get-buffer parent-buffer-name)
-                    maildir-message-mm-parts))
-            ;; Insert the content
-            (let (end-of-header)
-              (let ((buffer-read-only nil))
-                (erase-buffer)
-                ;; Insert the message
-                (insert (maildir/formatted-header header-text))
-                (setq end-of-header (point))
-                (setq maildir-message-header-end end-of-header)
-                (mm-display-part part)
-                (maildir/linkize (current-buffer)))
-              ;; Now stuff that needs to happen with the ability to set buffer-read-only
-              (maildir-message-mode)
-              (local-set-key ">" 'maildir-message-part-next)
-              (local-set-key "<" 'maildir-message-part-prev)
-              (switch-to-buffer (current-buffer))
-              ;; Make the local var to link us back and to other parts
-              (make-local-variable 'maildir-message-mm-parent-buffer-name)
-              (setq maildir-message-mm-parent-buffer-name parent-buffer-name)
-              (make-local-variable 'maildir-message-mm-part-number)
-              (setq maildir-message-mm-part-number part-number)
-              (goto-char end-of-header)))))))
+          (maildir/message-open-inlineable-part
+           parent-buffer-name parts part-number header-text)))))
 
 (defun maildir-message-open-another-part (&optional which)
   "Open a different part than this one.
