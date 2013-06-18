@@ -1,6 +1,6 @@
 (maildir
  :doc "Simple maildir based MUA."
- :version "0.0.18"
+ :version "0.0.19"
  :files
  ("maildir.el"
   "maildir-imap.el"
