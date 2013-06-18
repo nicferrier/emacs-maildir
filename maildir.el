@@ -417,6 +417,8 @@ Also causes the buffer to be marked not modified."
     (define-key maildir-message-mode-map "\C-cr" 'message-reply)
     (define-key maildir-message-mode-map "\C-cw" 'message-wide-reply)
     (define-key maildir-message-mode-map "F" 'maildir-message-fill)
+    (define-key maildir-message-mode-map "O" 'maildir-part-open)
+    (define-key maildir-message-mode-map "o" 'maildir-message-open-another-part)
     (define-key maildir-message-mode-map "q" 'kill-buffer)
     (define-key maildir-message-mode-map "i" 'maildir-message-part-info)
     ;;(define-key maildir-message-mode-map "p" 'mdmua-message-open-part)
