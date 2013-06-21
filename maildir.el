@@ -34,6 +34,7 @@
 (require 'cl)
 (require 'assoc)
 (require 'json)
+(require 'kv)
 
 (defgroup maildir nil
   "The Maildir mail user agent application."
