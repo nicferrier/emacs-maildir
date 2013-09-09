@@ -635,7 +635,7 @@ selection of a part."
       idx
       (when current-prefix-arg
         (completing-read
-         "How: "
+         "How (select a mailcap viewer): "
          (mapcar
           (lambda (l)
             (cons  (kva 'viewer l) l))
@@ -934,6 +934,20 @@ moves all the messages the search is highlighting."
          (error (message
                  "maildir-move %S while moving %S"
                  (car err) filename)))))
+
+;;;###autoload
+(defun maildir-cache-find (text maildir-root &optional find-spec)
+  "Use `find-dired' to find TEXT in the MAILDIR-ROOT"
+  (interactive
+   (list
+    (read-from-minibuffer "search maildir cache for: ")
+    (or maildir/buffer-mail-dir maildir-mail-dir)
+    (let ((find-spec "-type f -ctime -2 -exec grep -qi %s \\{\\} \\;"))
+      (if current-prefix-arg
+          (read-from-minibuffer "search maildir with: " find-spec)
+          find-spec))))
+  (find-dired (format "%s/cache" maildir-root)
+              (format find-spec text)))
 
 (provide 'maildir)
 
