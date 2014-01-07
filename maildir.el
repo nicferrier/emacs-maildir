@@ -538,6 +538,10 @@ The HOW, if present, is treated as a shell command and executed."
           (maildir/linkize (current-buffer)))
         ;; Now stuff that needs to happen with the ability to set buffer-read-only
         (maildir-message-mode)
+        (add-hook
+         'kill-buffer-hook
+         (lambda () (kill-buffer parent-buffer-name))
+         nil t)
         (local-set-key ">" 'maildir-message-part-next)
         (local-set-key "<" 'maildir-message-part-prev)
         (switch-to-buffer (current-buffer))
