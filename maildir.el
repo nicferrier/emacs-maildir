@@ -540,7 +540,10 @@ The HOW, if present, is treated as a shell command and executed."
         (maildir-message-mode)
         (add-hook
          'kill-buffer-hook
-         (lambda () (kill-buffer parent-buffer-name))
+         (lambda ()
+           (condition-case err 
+               (kill-buffer parent-buffer-name)
+             (error nil)))
          nil t)
         (local-set-key ">" 'maildir-message-part-next)
         (local-set-key "<" 'maildir-message-part-prev)
