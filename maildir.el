@@ -107,7 +107,7 @@ and it should get reinitialized next time you make the mode.")
 
 ;; Maildir parsing stuff
 
-(defun maildir/index-header-parse (header-name header-value)
+(defun maildir/index-header-parse (header-name header-value &optional filename)
   "Parse the HEADER-PAIR.
 
 Often does nothing but for some header fields (such as Date) it
@@ -127,7 +127,7 @@ changes the value in some way."
                   (ietf-drums-parse-address header-value)
                 (error
                  (progn
-                   (message "maildir/index-header-parse %s" err)
+                   (message "maildir/index-header-parse %s [%s]" err filename)
                    (cons "" "")))))
              (address (or (car addr) ""))
              (name (or (cdr addr) "")))
@@ -302,7 +302,7 @@ Disposes of any created buffer."
    (list (cons 'file file))
    (loop for (hdr-name . hdr-value) in (maildir/file->header file)
       if (memq hdr-name maildir-default-index-field-syms)
-      collect (maildir/index-header-parse hdr-name hdr-value))))
+      collect (maildir/index-header-parse hdr-name hdr-value file))))
 
 (defun maildir-index (mail-dir &optional field-symbols)
   "Make an index of the specified MAIL-DIR.
