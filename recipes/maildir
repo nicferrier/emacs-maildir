@@ -2,7 +2,10 @@
  :doc "Simple maildir based MUA."
  :version "0.0.22"
  :requires
- ((kv "0.0.17"))
+ ((kv "0.0.17")
+  (dash "2.3.0")
+  (s "1.9.0")
+  (noflet "0.0.8"))
  :files
  ("maildir.el"
   "maildir-imap.el"

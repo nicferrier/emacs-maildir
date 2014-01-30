@@ -35,6 +35,9 @@
 (require 'assoc)
 (require 'json)
 (require 'kv)
+(require 'noflet)
+(require 's)
+(require 'dash)
 
 (defgroup maildir nil
   "The Maildir mail user agent application."
@@ -243,13 +246,54 @@ changes the value in some way."
   (interactive)
   (maildir/pull))
 
+
+(defun maildir/split-string (sep-rx str &optional match-group)
+  "Split STR with SEP-RX optionally narrowing to MATCH-GROUP.
+
+Eg:
+
+  (split-string \"\\(\n\\)[^ ]\" line 1)
+
+might split on line ending not followed by space, but the
+resulting lines will still have whatever character matched the
+not-space."
+  (let ((to-match (or match-group 0)))
+    (noflet ((match-beginning (x)
+               (if (equal x 0)
+                   (funcall this-fn to-match)
+                   (funcall this-fn x)))
+             (match-end (x)
+               (if (equal x 0)
+                   (funcall this-fn to-match)
+                   (funcall this-fn x))))
+      (split-string str sep-rx))))
+
+(defun maildir/parse-header (buffer)
+  "Parse a header in the BUFFER."
+  (with-current-buffer buffer
+    (save-excursion
+      (goto-char (point-min))
+      (let* ((eoh (save-excursion
+                    (re-search-forward "\n\n" nil t)))
+             (lines 
+              (maildir/split-string
+               "\\(\n\\)\\(?:[^\r\t ]\\)"
+               (buffer-substring (point) eoh) 1)))
+        (-keep (lambda (s)
+                 (save-match-data
+                   (when (string-match "\\([^:]+\\):\\(.*\\)" s)
+                     (cons (intern (downcase (match-string 1 s)))
+                           (s-trim (or (match-string 2 s) ""))))))
+               lines)))))
+
 (defun maildir/file->header (message-file)
   "Read the MESSAGE-FILE and return it's header.
 
 Disposes of any created buffer."
   (with-current-buffer (find-file-noselect message-file)
     (unwind-protect
-         (mail-header-extract)
+         ;;(mail-header-extract)
+         (maildir/parse-header (current-buffer))
       (kill-buffer (current-buffer)))))
 
 (defun maildir/index-header (file)
