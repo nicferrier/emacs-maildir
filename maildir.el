@@ -717,7 +717,7 @@ This is probably bad but we should still read them."
   "Display inline part."
   ;; FIXME - replace this with some emacs function?
   (with-current-buffer buffer
-    (case (intern (aget header 'content-transfer-encoding))
+    (case (intern (or (aget header 'content-transfer-encoding) ":none"))
       ('quoted-printable
        (quoted-printable-decode-region
         end-of-header-point (point-max)))
