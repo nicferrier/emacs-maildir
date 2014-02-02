@@ -917,7 +917,8 @@ the new maildir in.  `maildir-mail-dir' is used by default."
   ;; FIXME we could make mail-dir buffer local and then we could find
   ;; this in the buffer.
   (maildir/new-maildir name maildir-mail-dir)
-  (message "maildir: created %s" name))
+  (if (called-interactively-p 'any) 
+      (message "maildir: created %s" name)))
 
 (defun maildir/directory-p (dir)
   (and (file-directory-p dir) dir))
