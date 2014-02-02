@@ -724,7 +724,8 @@ This is probably bad but we should still read them."
       ('base64
        (base64-decode-region end-of-header-point (point-max))))
     (set-buffer-modified-p nil)
-    (let ((encoding (cdr (cadr content-type)))
+    (let ((encoding (or (kva 'charset content-type)
+                        (cdr (cadr content-type))))
           (buffer-read-only nil))
       ;; Not sure whether to mark the region encoded so we don't have
       ;; to do it again
