@@ -912,7 +912,11 @@ the new maildir in.  `maildir-mail-dir' is used by default."
     (make-directory (format "%s/.%s/new" base name) t)))
 
 (defun maildir-make-new (name)
-  "Make a new maildir."
+  "Make a new maildir called NAME.
+
+The maildir is constructed under the `maildir-mail-dir'.  You
+don't need to use leading . or anything like that.  Just supply
+the name."
   (interactive "Mnew maildir name: ")
   ;; FIXME we could make mail-dir buffer local and then we could find
   ;; this in the buffer.
