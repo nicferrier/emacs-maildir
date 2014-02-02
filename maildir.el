@@ -955,6 +955,24 @@ By default list `maildir-mail-dir'."
            pairs nil t
            (car maildir/move-history) 'maildir/move-history))))
 
+(defun maildir-link (maildir-root to-folder &rest filename-list)
+  "Link each item in FILENAME-LIST into TO-FOLDER.
+
+FILENAME-LIST is a list of filenames that can be found in the
+cache.
+
+TO-FOLDER is just the folder name.
+
+MAILDIR-ROOT is the root maildir where the cache can be found."
+  (-each filename-list
+         (lambda (filename)
+           (let* ((name (file-name-nondirectory filename))
+                  (source (concat maildir-root "/cache/" name))
+                  (to-dir (concat maildir-root "/." to-folder)))
+             (when (file-exists-p source)
+               (make-symbolic-link
+                source (concat to-dir "/cur/" name) t))))))
+
 (defun maildir-move (to-folder &rest filename-list)
   "Move the files in FILENAME-LIST to TO-FOLDER.
 
