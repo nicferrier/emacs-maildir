@@ -983,7 +983,7 @@ MAILDIR-ROOT is the root maildir where the cache can be found."
                   (to-dir (concat maildir-root "/." to-folder)))
              (when (file-exists-p source)
                (make-symbolic-link
-                source (concat to-dir "/cur/" name) t))))))
+                source (concat to-dir "/cur/" name ":2,") t))))))
 
 (defun maildir-move (to-folder &rest filename-list)
   "Move the files in FILENAME-LIST to TO-FOLDER.
