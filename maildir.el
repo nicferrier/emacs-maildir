@@ -142,6 +142,14 @@ changes the value in some way."
      (file-name-as-directory mail-dir)
      (if sub sub "")))))
 
+
+(defun maildir/folder-list (&optional maildir)
+  "List the folders under MAILDIR or `maildir-mail-dir'."
+  (mapcar
+   'maildir/directory->pair
+   (maildir/list-maildirs (or maildir maildir-mail-dir))))
+
+
 (defun maildir/file-name->mail (filename &optional do-info extra-info)
   "See http://cr.yp.to/proto/maildir.html"
   (let ((fname (file-name-nondirectory filename)))
@@ -939,20 +947,19 @@ By default list `maildir-mail-dir'."
 (defun maildir/directory->pair (directory)
   "Convert a directory to a cons: basename . directory"
   (cons
-   (file-name-nondirectory directory)
+   (substring (file-name-nondirectory directory) 1)
    directory))
 
 (defvar maildir/move-history nil
   "History of maildir move folders.")
 
-(defun maildir/complete-folder ()
-  (let ((pairs
-         (mapcar
-          'maildir/directory->pair
-          (maildir/list-maildirs maildir/buffer-mail-dir))))
+(defun* maildir/complete-folder (&key (prompt "move to folder: ")
+                                      maildir)
+  "Complete the list of maildirs with the user."
+  (let ((pairs (maildir/folder-list (or maildir maildir/buffer-mail-dir))))
     (aget pairs
           (completing-read
-           "move to folder: "
+           prompt
            pairs nil t
            (car maildir/move-history) 'maildir/move-history))))
 
