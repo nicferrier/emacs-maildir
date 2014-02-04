@@ -28,7 +28,6 @@
 
 (require 'pipe)
 
-
 (defun maildir-index/find (maildir-cache-dir days text-filter)
   ;; if we preserve the ctime of the mails then we have a good way to
   ;; filter  with find
@@ -52,8 +51,13 @@ DAYS old maildir files are searched for TERM.
 If FOLDER-NAME exists just pull new files into it."
   ;; TODO we need a refresh option? to delete all the files in the folder
   (interactive
-   (list (read-from-minibuffer "index mail-dir name: ")
-         (read-from-minibuffer "index search term: ")))
+   (let ((reads 
+          (list (read-from-minibuffer "index mail-dir name: ")
+                (read-from-minibuffer "index search term: "))))
+     (if current-prefix-arg
+         (append reads (list :days (string-to-number
+                                    (read-from-minibuffer "days to index: "))))
+         reads)))
   (maildir-make-new folder-name)
   (let ((cmd (maildir-index/find
               (maildir/home maildir-mail-dir "cache") days term))
