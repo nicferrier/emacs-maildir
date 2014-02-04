@@ -5,7 +5,8 @@
  ((kv "0.0.17")
   (dash "2.3.0")
   (s "1.9.0")
-  (noflet "0.0.8"))
+  (noflet "0.0.8")
+  (pipe "0.0.1"))
  :files
  ("maildir.el"
   "maildir-imap.el"
