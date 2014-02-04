@@ -929,12 +929,15 @@ By default list `maildir-mail-dir'."
 
 ;;;###autoload
 (defun maildir-list (mail-dir &optional clear)
-  "List the maildir."
-  ;; TODO how to resolve the location of a specified mail-dir?
+  "List MAIL-DIR.
+
+With a prefix argument complete MAIL-DIR from `maildir-mail-dir'
+otherwise use `maildir-mail-dir' as MAIL-DIR."
   (interactive (if current-prefix-arg 
                    (list (maildir/complete-folder
                           :prompt "open a maildir: "
-                          :maildir maildir-mail-dir))))
+                          :maildir maildir-mail-dir))
+                   maildir-mail-dir))
   (let ((clear t)
         (buf (get-buffer-create
               (if (equal mail-dir maildir-mail-dir)
