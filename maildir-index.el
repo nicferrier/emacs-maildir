@@ -28,35 +28,6 @@
 
 (require 'pipe)
 
-;; copy of the function in maildir.el
-(defun maildir-index/2 (mail-dir &optional field-symbols)
-  "Make an index of the specified MAIL-DIR.
-
-Optionally use FIELD-SYMBOLS as the list of header field symbols
-to produce the index for.  By default this is
-`maildir-default-index-field-syms'."
-  (loop
-     with collect-file = nil
-     for file in (directory-files (maildir/home mail-dir "cur") 't "^[^.]+")
-     do
-       (setq
-        collect-file
-        (condition-case err
-            (let ((indexed (maildir/index-header file)))
-              (if (and (assq 'date indexed)
-                       (assq 'to indexed)
-                       (assq 'from indexed))
-                  indexed
-                  ;; Else
-                  (message "maildir-index: parsing %s expectation error" file)
-                  (delete-file file)
-                  nil))
-          (error
-           (message "maildir-index: parsing %s error %S" file err)
-           (delete-file file)
-           nil)))
-     if collect-file
-     collect collect-file))
 
 (defun maildir-index/find (maildir-cache-dir days text-filter)
   ;; if we preserve the ctime of the mails then we have a good way to
@@ -72,6 +43,7 @@ to produce the index for.  By default this is
    days
    text-filter))
 
+;;;###autoload
 (defun* maildir-index-make (folder-name term &key (days 10))
   "Make FOLDER-NAME an index of TERM in `maildir-mail-dir'. 
 
