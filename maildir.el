@@ -812,14 +812,6 @@ where the cadr is the mime-type."
   (interactive)
   (kill-buffer))
 
-;;;###autoload
-(defun maildir-refresh ()
-  "Refresh the maildir."
-  (interactive)
-  (message "maildir refreshing...")
-  (maildir-pull)
-  (maildir-list (or maildir/buffer-mail-dir maildir-mail-dir) t))
-
 (defun maildir-mode-next-field ()
   (interactive)
   (re-search-forward "[^ ] "))
@@ -882,34 +874,6 @@ set to the list of overlays that isearch found."
   (interactive)
   (find-file (get-text-property (point) :filename)))
 
-;;;###autoload
-(defun maildir-list (mail-dir &optional clear)
-  "List the maildir."
-  ;; TODO how to resolve the location of a specified mail-dir?
-  (interactive
-   (list maildir-mail-dir))
-  (let ((clear t)
-        (buf (get-buffer-create
-              (if (equal mail-dir maildir-mail-dir)
-                  "*maildir*"
-                  (format "*maildir-%s*" mail-dir)))))
-    (with-current-buffer buf
-      (let ((buffer-read-only nil))
-        (when clear (erase-buffer))
-        (let ((index-list (maildir-index mail-dir)))
-          (insert
-           (mapconcat 'maildir/hdr->summary index-list "\n")
-           "\n"))
-        ;; For display of maildir folders this (point-max) will have
-        ;; to be the start of the folder list
-        (sort-lines t (point-min) (point-max)))
-      (switch-to-buffer buf)
-      (maildir-mode)
-      ;; Now set the buffer local maildir pointer
-      (make-local-variable 'maildir/buffer-mail-dir)
-      (setq maildir/buffer-mail-dir mail-dir)
-      (add-hook 'isearch-mode-hook 'maildir/isearch-hook-jack-in t t)
-      (goto-char (point-min)))))
 
 (defun maildir/new-maildir (name &optional base-maildir)
   "Make a new maildir NAME.
@@ -962,6 +926,46 @@ By default list `maildir-mail-dir'."
            prompt
            pairs nil t
            (car maildir/move-history) 'maildir/move-history))))
+
+;;;###autoload
+(defun maildir-list (mail-dir &optional clear)
+  "List the maildir."
+  ;; TODO how to resolve the location of a specified mail-dir?
+  (interactive (if current-prefix-arg 
+                   (list (maildir/complete-folder
+                          :prompt "open a maildir: "
+                          :maildir maildir-mail-dir))))
+  (let ((clear t)
+        (buf (get-buffer-create
+              (if (equal mail-dir maildir-mail-dir)
+                  "*maildir*"
+                  (format "*maildir-%s*" (substring (file-name-base mail-dir) 1))))))
+    (with-current-buffer buf
+      (let ((buffer-read-only nil))
+        (when clear (erase-buffer))
+        (let ((index-list (maildir-index mail-dir)))
+          (insert
+           (mapconcat 'maildir/hdr->summary index-list "\n")
+           "\n"))
+        ;; For display of maildir folders this (point-max) will have
+        ;; to be the start of the folder list
+        (sort-lines t (point-min) (point-max)))
+      (switch-to-buffer buf)
+      (maildir-mode)
+      ;; Now set the buffer local maildir pointer
+      (make-local-variable 'maildir/buffer-mail-dir)
+      (setq maildir/buffer-mail-dir mail-dir)
+      (add-hook 'isearch-mode-hook 'maildir/isearch-hook-jack-in t t)
+      (goto-char (point-min)))))
+
+;;;###autoload
+(defun maildir-refresh ()
+  "Refresh the maildir."
+  (interactive)
+  (message "maildir refreshing...")
+  (maildir-pull)
+  (maildir-list (or maildir/buffer-mail-dir maildir-mail-dir) t))
+
 
 (defun maildir-link (maildir-root to-folder &rest filename-list)
   "Link each item in FILENAME-LIST into TO-FOLDER.
