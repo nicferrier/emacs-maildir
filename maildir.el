@@ -254,6 +254,30 @@ changes the value in some way."
   (interactive)
   (maildir/pull))
 
+(defun maildir/base-split-string (string &optional separators omit-nulls)
+  "Copy of Emacs split-string allowing us to use it overridden."
+  (let ((keep-nulls (not (if separators omit-nulls t)))
+	(rexp (or separators split-string-default-separators))
+	(start 0)
+	notfirst
+	(list nil))
+    (while (and (string-match rexp string
+			      (if (and notfirst
+				       (= start (match-beginning 0))
+				       (< start (length string)))
+				  (1+ start) start))
+		(< start (length string)))
+      (setq notfirst t)
+      (if (or keep-nulls (< start (match-beginning 0)))
+	  (setq list
+		(cons (substring string start (match-beginning 0))
+		      list)))
+      (setq start (match-end 0)))
+    (if (or keep-nulls (< start (length string)))
+	(setq list
+	      (cons (substring string start)
+		    list)))
+    (nreverse list)))
 
 (defun maildir/split-string (sep-rx str &optional match-group)
   "Split STR with SEP-RX optionally narrowing to MATCH-GROUP.
@@ -274,7 +298,7 @@ not-space."
                (if (equal x 0)
                    (funcall this-fn to-match)
                    (funcall this-fn x))))
-      (split-string str sep-rx))))
+      (maildir/base-split-string str sep-rx))))
 
 (defun maildir/parse-header (buffer)
   "Parse a header in the BUFFER."
