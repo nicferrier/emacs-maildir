@@ -2,6 +2,12 @@
 
 (require 'maildir)
 
+(ert-deftest maildir/split-string ()
+  (should
+   (equal
+    (maildir/split-string "\\(\n\\)[^ ]" "blah\nblah" 1)
+    (list "blah" "blah"))))
+
 (ert-deftest maildir--index-header-parse-date()
   "Test the index header parsing of dates."
   (should
