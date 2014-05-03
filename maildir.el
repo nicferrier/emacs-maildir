@@ -390,16 +390,6 @@ in which case it expects to `read' the HEADER-ALIST at point."
 Optionally use FIELD-SYMBOLS as the list of header field symbols
 to produce the index for.  By default this is
 `maildir-default-index-field-syms'."
-  (comment
-   (loop
-      with collect-file = nil
-      for file in 
-      do
-        (setq
-         collect-file
-         )
-      if collect-file
-      collect collect-file))
   (-keep
    (lambda (file)
      (condition-case err
