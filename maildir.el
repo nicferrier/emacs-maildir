@@ -230,7 +230,7 @@ changes the value in some way."
              unless (maildir/exists-p file maildir)
              collect file)))
     ;; What are they?
-    (maildir-log new-mails)
+    ;;  (maildir-log new-mails)
     ;; Make a filelist of them
     (with-current-buffer (find-file-noselect "/tmp/maildircp")
       (erase-buffer)
