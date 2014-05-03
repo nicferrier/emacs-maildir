@@ -241,9 +241,7 @@ Optionally return the SUB as well."
     ;; Make a filelist of them
     (with-current-buffer (find-file-noselect "/tmp/maildircp")
       (erase-buffer)
-      (loop
-         for file in new-mails
-         do (progn (insert file) (insert "\n")))
+      (--each new-mails (insert (format "%s\n" it)))
       (save-buffer))
     ;; Rsync the filelist to the maildir/new - Would prefer to do this async
     (shell-command-to-string
