@@ -108,8 +108,8 @@ Presumes `maildir/imap-connection' is made."
                             (mail-header-extract)))
                      (log-msg 
                       (format "%s from %s with %s\n"
-                              (aget hdr 'subject)
-                              (aget hdr 'from)
+                              (kva 'subject hdr)
+                              (kva 'from hdr)
                               (imap-message-get msg-uid 'FLAGS maildir/imap-connection))))
                 (with-current-buffer maildir/imap-log
                   (insert log-msg)))
