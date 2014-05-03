@@ -142,6 +142,14 @@ changes the value in some way."
      (file-name-as-directory mail-dir)
      (if sub sub "")))))
 
+(defun maildir/folder-home (mail-dir folder-name &optional sub)
+  "Expand MAIL-DIR and find the FOLDER-NAME within it.
+
+Optionally return the SUB as well."
+  (let ((folder-path (format "%s.%s" (maildir/home mail-dir) folder-name)))
+    (if sub
+        (concat folder-path "/" sub)
+        folder-path)))
 
 (defun maildir/folder-list (&optional maildir)
   "List the folders under MAILDIR or `maildir-mail-dir'."
