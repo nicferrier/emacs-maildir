@@ -212,10 +212,9 @@ Optionally return the SUB as well."
            (make-symbolic-link cache-file cur-file)
            cur-file))))
 
-(defun maildir/pull ()
+(defun maildir/pull (maildir)
   "Base function for pulling maildir."
-  (let* ((maildir maildir-mail-dir)
-         (filelist
+  (let* ((filelist
           (loop for filename in
                (split-string
                 ;; Would prefer to do this async
@@ -257,10 +256,13 @@ Optionally return the SUB as well."
     (maildir-import-new maildir)))
 
 ;;;###autoload
-(defun maildir-pull ()
+(defun maildir-pull (mail-dir)
   "Use ssh and rsync to pull mail from the remote."
-  (interactive)
-  (maildir/pull))
+  (interactive
+   (list (or maildir/buffer-mail-dir
+             (read-directory-name "mail-dir: " "~/" maildir-mail-dir t))))
+  (when (file-exists-p (concat mail-dir "pull"))
+    (maildir/pull mail-dir)))
 
 (defun maildir/base-split-string (string &optional separators omit-nulls)
   "Copy of Emacs split-string allowing us to use it overridden."
