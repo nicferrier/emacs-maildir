@@ -490,6 +490,22 @@ Each value is a number."
           (goto-char new-point)))
     (delete-file filename)))
 
+(defun maildir-rm-and-spam (filename)
+  "Remove FILENAME but mark is as spam first."
+  (interactive
+   (list
+    (plist-get (text-properties-at (point)) :filename)))
+  (let ((buffer (find-file-noselect filename)))
+    (unwind-protect
+         (with-current-buffer buffer
+           (save-excursion
+             (let ((buffer-read-only nil))
+               (goto-char (point-min))
+               (insert "X-JUNK: SPAM\n"))
+             (write-file filename)))
+      (kill-buffer buffer)))
+  (maildir-rm filename))
+
 
 ;; Mail viewing
 
@@ -936,6 +952,8 @@ set to the list of overlays that isearch found."
     (define-key maildir-mode-map "p" 'previous-line)
     (define-key maildir-mode-map "\t" 'maildir-mode-next-field)
     (define-key maildir-mode-map "d" 'maildir-rm)
+    (define-key maildir-mode-map "k" 'maildir-rm-and-spam)
+    (define-key maildir-mode-map "1" 'maildir-rm-and-spam)
     (define-key maildir-mode-map "q" 'maildir-quit)
     (define-key maildir-mode-map "r" 'maildir-refresh)
     (define-key maildir-mode-map "g" 'maildir-refresh)
