@@ -84,7 +84,7 @@ Presumes `maildir/imap-connection' is made."
   "The log buffer used for when we're not doing actual pulling.")
 
 (defun maildir/imap-message (msg)
-  "Do a single IMAP message."
+  "Fetch a single MSG over IMAP."
   (with-temp-buffer ; (get-buffer-create "*imapscratch*")
     (destructuring-bind (file filename)
         (maildir/new-filename maildir-mail-dir)
