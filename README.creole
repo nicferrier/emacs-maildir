@@ -51,7 +51,7 @@ some filtering on whether maildir.el can actually display your mail or
 not. 
 
 If you feel like you're not seeing email grep your cache directory for
-a the mail. If you find a bug, obviously, report it to me.
+the mail. If you find a bug, obviously, report it to me.
 
 == Commands ==
 
@@ -61,6 +61,7 @@ a the mail. If you find a bug, obviously, report it to me.
 | //TAB//         | next field                                      |
 | //+//           | make a new maildir                              |
 | //d//           | delete the message                              |
+| //1// or //k//  | delete AND mark as spam                         |
 | //m//           | move the message to another folder              |
 | //C-s ... M-m// | move everything matching the incremental search |
 | //q//           | quit                                            |
@@ -98,9 +99,6 @@ display. When viewing the message the following keys are added to
 ** handling SEEN seems easy, just add something on open
 ** handling reply is harder, have to add a hook to mail send
 *** and some reference in the reply mail buffer to the original message filename?
-
-* allow choosing which maildir to list
-** have maildir-list take an optional maildir directory
 
 * shard the storage of the mails in the cache directory.
 
