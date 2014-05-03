@@ -1138,6 +1138,42 @@ moves all the messages the search is highlighting."
   (find-dired (format "%s/cache" maildir-root)
               (format find-spec text)))
 
+;;;###autoload
+(defun maildir-transfer-folder (folder-name destination-maildir from-maildir)
+  "Move the mails in FOLDER-NAME to DESTINATION-MAILDIR."
+  (interactive
+   (list 
+    (maildir/complete-folder
+     :prompt "transfer a maildir: "
+     :maildir maildir-mail-dir
+     :select 'car)
+    (read-directory-name "send to maildir: " "~/")
+    (if (file-exists-p maildir/buffer-mail-dir)
+        maildir/buffer-mail-dir
+        (read-directory-name "from maildir: " "~/" nil t))))
+  (unless (file-exists-p destination-maildir)
+    (make-directory (format "%s/cur" destination-maildir) t)
+    (make-directory (format "%s/new" destination-maildir) t)
+    (make-directory (format "%s/cache" destination-maildir) t))
+  (let ((folder-cur (maildir/folder-home from-maildir folder-name "cur"))
+        (cur (concat (file-name-as-directory destination-maildir) "cur/")))
+    ;; Now copy each file to the cache there
+    (--each
+        (->> (directory-files folder-cur 't "^[^.]+")
+          (-keep 'file-symlink-p)
+          (--map
+           (let ((new-file
+                  (format
+                   "%scache/%s"
+                   (file-name-as-directory destination-maildir)
+                   (file-name-nondirectory it))))
+             (cons it new-file))))
+      (let ((origin (car it))
+            (cache-file (cdr it)))
+        (unless (file-exists-p cache-file) (copy-file origin cache-file))
+        (let ((cur-base (maildir/file-name->mail cache-file :add)))
+          (make-symbolic-link cache-file (concat cur cur-base)))))))
+
 (provide 'maildir)
 
 ;;; maildir.el ends here
