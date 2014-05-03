@@ -344,6 +344,22 @@ verifies as non-spam or not."
       if (memq hdr-name maildir-default-index-field-syms)
       collect (maildir/index-header-parse hdr-name hdr-value file))))
 
+(defun maildir-verify-header (header-alist)
+  "Verify HEADER-ALIST with a bunch of rules.
+
+An attempt to filter obvious spam.  Can be called interactively
+in which case it expects to `read' the HEADER-ALIST at point."
+  (interactive (list (save-excursion (read (current-buffer)))))
+  (let ((verified
+         (and (assq 'date header-alist)
+              (or
+               (assq 'to header-alist)
+               (assq 'x-original-to header-alist))
+              (assq 'from header-alist))))
+    (when (called-interactively-p 'interactive)
+      (message "verified? %s" verified))
+    verified))
+
 (defun maildir-index (mail-dir &optional field-symbols)
   "Make an index of the specified MAIL-DIR.
 
@@ -358,9 +374,7 @@ to produce the index for.  By default this is
         collect-file
         (condition-case err
             (let ((indexed (maildir/index-header file)))
-              (if (and (assq 'date indexed)
-                       (assq 'to indexed)
-                       (assq 'from indexed))
+              (if (maildir-verify-header indexed)
                   indexed
                   ;; Else
                   (message "maildir-index: parsing %s expectation error" file)
