@@ -373,7 +373,6 @@ in which case it expects to `read' the HEADER-ALIST at point."
       (message "verified? %s" verified))
     verified))
 
-
 (defun maildir/log (hdr filename message)
   "Log the specified message to the maildir log."
   (with-current-buffer (get-buffer-create "*maildir-log*")
