@@ -1140,7 +1140,12 @@ moves all the messages the search is highlighting."
 
 ;;;###autoload
 (defun maildir-transfer-folder (folder-name destination-maildir from-maildir)
-  "Move the mails in FOLDER-NAME to DESTINATION-MAILDIR."
+  "Copy the mails in FOLDER-NAME to DESTINATION-MAILDIR.
+
+This is most usful for creating copy maildirs outside of the
+maildir you are working on.  It copies files from the cache of
+FROM-MAILDIR to the cache of DESTINATION-MAILDIR, creating
+DESTINATION-MAILDIR if necessary."
   (interactive
    (list 
     (maildir/complete-folder
