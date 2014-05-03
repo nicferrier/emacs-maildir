@@ -44,7 +44,7 @@
   :group 'applications)
 
 (defcustom maildir-default-index-field-syms
-  '(to from date subject)
+  '(to from date subject x-junk)
   "The default list of field symbols for the indexer."
   :group 'maildir
   :type 'sexp)
@@ -359,11 +359,16 @@ An attempt to filter obvious spam.  Can be called interactively
 in which case it expects to `read' the HEADER-ALIST at point."
   (interactive (list (save-excursion (read (current-buffer)))))
   (let ((verified
-         (and (assq 'date header-alist)
-              (or
-               (assq 'to header-alist)
-               (assq 'x-original-to header-alist))
-              (assq 'from header-alist))))
+         (and
+          (not  ; the main marked spam detection rule
+           (equal
+            (upcase
+             (or (cdr-safe (assq 'x-junk header-alist)) "")) "SPAM"))
+          (assq 'date header-alist)
+          (or
+           (assq 'to header-alist)
+           (assq 'x-original-to header-alist))
+          (assq 'from header-alist))))
     (when (called-interactively-p 'interactive)
       (message "verified? %s" verified))
     verified))
