@@ -360,32 +360,50 @@ in which case it expects to `read' the HEADER-ALIST at point."
       (message "verified? %s" verified))
     verified))
 
+
+(defun maildir/log (hdr filename message)
+  "Log the specified message to the maildir log."
+  (with-current-buffer (get-buffer-create "*maildir-log*")
+    (save-excursion
+      (goto-char (point-max))
+      (insert
+       (propertize
+        (format "%s %s" (current-time-string) message)
+        :msg-filebame filename)))))
+
 (defun maildir-index (mail-dir &optional field-symbols)
   "Make an index of the specified MAIL-DIR.
 
 Optionally use FIELD-SYMBOLS as the list of header field symbols
 to produce the index for.  By default this is
 `maildir-default-index-field-syms'."
-  (loop
-     with collect-file = nil
-     for file in (directory-files (maildir/home mail-dir "cur") 't "^[^.]+")
-     do
-       (setq
-        collect-file
-        (condition-case err
-            (let ((indexed (maildir/index-header file)))
-              (if (maildir-verify-header indexed)
-                  indexed
-                  ;; Else
-                  (message "maildir-index: parsing %s expectation error" file)
-                  (delete-file file)
-                  nil))
+  (comment
+   (loop
+      with collect-file = nil
+      for file in 
+      do
+        (setq
+         collect-file
+         )
+      if collect-file
+      collect collect-file))
+  (-keep
+   (lambda (file)
+     (condition-case err
+         (let ((indexed (maildir/index-header file)))
+           (if (maildir-verify-header indexed)
+               indexed
+               ;; Else
+               (maildir/log
+                indexed file
+                (format "%s failed to parse `maildir-verify-header'" file))
+               (delete-file file)
+               nil))
           (error
-           (message "maildir-index: parsing %s error %S" file err)
+           (maildir/log "parsing %s error %S" file err)
            (delete-file file)
            nil)))
-     if collect-file
-     collect collect-file))
+   (directory-files (maildir/home mail-dir "cur") 't "^[^.]+")))
 
 (defun maildir-lisp ()
   (let ((buf (get-buffer-create "*maildir*")))
