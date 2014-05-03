@@ -259,7 +259,7 @@ Optionally return the SUB as well."
   (interactive
    (list (or maildir/buffer-mail-dir
              (read-directory-name "mail-dir: " "~/" maildir-mail-dir t))))
-  (when (file-exists-p (concat mail-dir "pull"))
+  (when (file-exists-p (concat mail-dir "/pull"))
     (maildir/pull mail-dir)))
 
 (defun maildir/base-split-string (string &optional separators omit-nulls)
