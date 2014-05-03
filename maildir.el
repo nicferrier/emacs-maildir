@@ -33,7 +33,6 @@
 (require 'rfc2047)
 (require 'ietf-drums)
 (require 'cl)
-(require 'assoc)
 (require 'json)
 (require 'kv)
 (require 'noflet)
