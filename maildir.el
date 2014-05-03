@@ -990,14 +990,20 @@ By default list `maildir-mail-dir'."
   "History of maildir move folders.")
 
 (defun* maildir/complete-folder (&key (prompt "move to folder: ")
-                                      maildir)
-  "Complete the list of maildirs with the user."
-  (let ((pairs (maildir/folder-list (or maildir maildir/buffer-mail-dir))))
-    (kva (completing-read
-          prompt
-          pairs nil t
-          (car maildir/move-history) 'maildir/move-history)
-         pairs)))
+                                      maildir
+                                      (select 'cdr))
+  "Complete the list of maildirs with the user.
+
+SELECT can be either `car' or `cdr', by default is is `cdr',
+returning the full filename of the folder.  `car' returns just
+the folder-name."
+  (let* ((pairs (maildir/folder-list (or maildir maildir/buffer-mail-dir)))
+         (red (assoc
+               (completing-read prompt pairs nil t
+                                (car maildir/move-history)
+                                'maildir/move-history)
+               pairs)))
+    (apply select (list red))))
 
 ;;;###autoload
 (defun maildir-list (mail-dir &optional clear)
