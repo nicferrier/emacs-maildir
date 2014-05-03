@@ -629,17 +629,28 @@ The HOW, if present, is treated as a shell command and executed."
           (insert (maildir/formatted-header header-text))
           (setq end-of-header (point))
           (setq maildir-message-header-end end-of-header)
-          (mm-display-part part)
-          (maildir/linkize (current-buffer)))
+          (let* ((content-type (mm-handle-type part))
+                 (encoding (or (kva 'charset content-type)
+                               (cdr (cadr content-type))))
+                 (buffer-read-only nil))
+            (when encoding
+              (condition-case err
+                  (decode-coding-region end-of-header (point-max)
+                                        (intern (downcase encoding)))
+                (error
+                 (message
+                  (concat "maildir/message-open-inlineable-part "
+                          "encode error -- %S") err))))
+            (mm-display-part part)
+            (maildir/linkize (current-buffer))))
         ;; Now stuff that needs to happen with the ability to set buffer-read-only
         (maildir-message-mode)
-        (add-hook
-         'kill-buffer-hook
-         (lambda ()
-           (condition-case err 
-               (kill-buffer parent-buffer-name)
-             (error nil)))
-         nil t)
+        (add-hook 'kill-buffer-hook
+                  (lambda ()
+                    (condition-case err 
+                        (kill-buffer parent-buffer-name)
+                      (error nil)))
+                  nil t)
         (local-set-key ">" 'maildir-message-part-next)
         (local-set-key "<" 'maildir-message-part-prev)
         (switch-to-buffer (current-buffer))
