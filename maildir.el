@@ -617,10 +617,7 @@ The HOW, if present, is treated as a shell command and executed."
                                              header-text)
   "If a part is inlineable this is how it's opened."
   (let ((part (elt parts part-number))
-        (part-buffer-name (format
-                           "%s[%s]"
-                           parent-buffer-name
-                           part-number)))
+        (part-buffer-name (format "%s[%s]" parent-buffer-name part-number)))
     (with-current-buffer (get-buffer-create part-buffer-name)
       ;; Copy the parent buffer's parts list
       (setq maildir-message-mm-parts parts)
