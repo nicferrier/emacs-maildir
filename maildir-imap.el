@@ -1,6 +1,7 @@
 ;;; maildir-imap.el - imap sync for maildir
 
 (require 'imap)
+(require 'kva)
 
 (defcustom maildir/imap-source nil
   "An IMAP source for pulling mails from."
