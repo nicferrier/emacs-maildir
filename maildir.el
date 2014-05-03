@@ -29,6 +29,7 @@
 (require 'mailheader)
 (require 'mm-decode)
 (require 'mm-view)
+(require 'gnus-art)
 (require 'rfc2047)
 (require 'ietf-drums)
 (require 'cl)
