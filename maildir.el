@@ -1064,8 +1064,9 @@ maildir."
   "Refresh the maildir."
   (interactive)
   (message "maildir refreshing...")
-  (maildir-pull)
-  (maildir-list (or maildir/buffer-mail-dir maildir-mail-dir) t))
+  (let ((maildir (or maildir/buffer-mail-dir maildir-mail-dir)))
+    (maildir-pull maildir)
+    (maildir-list maildir t)))
 
 
 (defun maildir-link (maildir-root to-folder &rest filename-list)
