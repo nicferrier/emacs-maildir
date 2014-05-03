@@ -1192,6 +1192,8 @@ DESTINATION-MAILDIR if necessary."
         (let ((cur-base (maildir/file-name->mail cache-file :add)))
           (make-symbolic-link cache-file (concat cur cur-base)))))))
 
+
+
 (provide 'maildir)
 
 ;;; maildir.el ends here
