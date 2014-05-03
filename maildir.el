@@ -1017,18 +1017,30 @@ the folder-name."
 (defun maildir-list (mail-dir &optional clear)
   "List MAIL-DIR.
 
-With a prefix argument complete MAIL-DIR from `maildir-mail-dir'
-otherwise use `maildir-mail-dir' as MAIL-DIR."
-  (interactive (if current-prefix-arg 
-                   (list (maildir/complete-folder
-                          :prompt "open a maildir: "
-                          :maildir maildir-mail-dir))
-                   maildir-mail-dir))
-  (let ((clear t)
-        (buf (get-buffer-create
-              (if (equal mail-dir maildir-mail-dir)
-                  "*maildir*"
-                  (format "*maildir-%s*" (substring (file-name-base mail-dir) 1))))))
+Interctively, MAIL-DIR is `maildir-mail-dir' by default. With a
+prefix argument complete a folder name from `maildir-mail-dir'.
+With a prefix argument of `1' open any other directory as a
+maildir."
+  (interactive
+   (list
+    (if current-prefix-arg
+        (cond 
+          ((eq current-prefix-arg 1)
+           (read-directory-name "maildir dir: " "~/" nil t))
+          ((equal current-prefix-arg '(4))
+           (maildir/complete-folder :prompt "open a maildir: "
+                                    :maildir maildir-mail-dir)))
+        ;; Else just the main mail dir
+        maildir-mail-dir)))
+  (let* ((clear t)
+         (mail-dir-base-name
+          (save-match-data
+            (when (string-match ".*/[.]*\\([^/]+\\)/*$" mail-dir)
+              (match-string 1 mail-dir))))
+         (buf (get-buffer-create
+               (if (equal mail-dir maildir-mail-dir)
+                   "*maildir*"
+                   (format "*maildir-%s*" mail-dir-base-name)))))
     (with-current-buffer buf
       (let ((buffer-read-only nil))
         (when clear (erase-buffer))
