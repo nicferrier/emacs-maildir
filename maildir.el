@@ -319,14 +319,22 @@ not-space."
                lines)))))
 
 (defun maildir/file->header (message-file)
-  "Read the MESSAGE-FILE and return it's header.
+  "Read the MESSAGE-FILE and return it's header as an alist.
 
-Disposes of any created buffer."
-  (with-current-buffer (find-file-noselect message-file)
-    (unwind-protect
-         ;;(mail-header-extract)
-         (maildir/parse-header (current-buffer))
-      (kill-buffer (current-buffer)))))
+Can be called interactively to test header parsing.
+`maildir-index' actually implements the parsing verification
+rules so you have to check there to see whether a given alist
+verifies as non-spam or not."
+  (interactive (list (buffer-file-name)))
+  (with-temp-buffer
+    (insert-file-contents-literally message-file)
+    (let ((parsed (maildir/parse-header (current-buffer))))
+      (when (called-interactively-p 'interactive)
+        (with-current-buffer
+            (get-buffer-create (format "*%s-headers*" message-file))
+          (print parsed (current-buffer))
+          (switch-to-buffer (current-buffer))))
+      parsed)))
 
 (defun maildir/index-header (file)
   "Convert MESSAGE-FILE to an index list."
