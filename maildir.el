@@ -434,7 +434,7 @@ Each value is a number."
      (maildir/format-date (maildir/parse-date (cdr (assq 'date hdr-alist))))
      'face 'message-header-other)
     (let* ((from (cadr (assq 'from hdr-alist)))
-           (addr (aget from 'address))
+           (addr (kva 'address from))
            (existing-color (gethash (downcase addr) maildir/from-colors))
            (color (if existing-color
                       existing-color
@@ -442,7 +442,7 @@ Each value is a number."
                         (puthash (downcase addr) new-color maildir/from-colors)
                          new-color))))
       (propertize
-       (rfc2047-decode-string (aget from 'address))
+       (rfc2047-decode-string (kva 'address from))
        'face `(:foreground ,color)))
     (let ((subject (cdr (assq 'subject hdr-alist))))
       (if subject
@@ -450,7 +450,7 @@ Each value is a number."
            (rfc2047-decode-string subject)
            'face 'message-header-subject)
           "")))
-   :filename (aget hdr-alist 'file)))
+   :filename (kva 'file hdr-alist)))
 
 (defun maildir-rm (filename)
   "Remove the specified FILENAME."
@@ -771,7 +771,7 @@ This is probably bad but we should still read them."
   "Display inline part."
   ;; FIXME - replace this with some emacs function?
   (with-current-buffer buffer
-    (case (intern (or (aget header 'content-transfer-encoding) ":none"))
+    (case (intern (or (kva 'content-transfer-encoding header) ":none"))
       ('quoted-printable
        (quoted-printable-decode-region
         end-of-header-point (point-max)))
@@ -827,7 +827,7 @@ where the cadr is the mime-type."
                (maildir/msg-header-fix end-of-header)
                (mail-header-extract)))
            (content-type (mail-header-parse-content-type
-                          (or (aget header 'content-type)
+                          (or (kva 'content-type header)
                               "text/plain"))))
       ;; Decide what to do based on type
       (if (string-match-p "multipart/.*" (car content-type))
@@ -967,11 +967,11 @@ By default list `maildir-mail-dir'."
                                       maildir)
   "Complete the list of maildirs with the user."
   (let ((pairs (maildir/folder-list (or maildir maildir/buffer-mail-dir))))
-    (aget pairs
-          (completing-read
-           prompt
-           pairs nil t
-           (car maildir/move-history) 'maildir/move-history))))
+    (kva (completing-read
+          prompt
+          pairs nil t
+          (car maildir/move-history) 'maildir/move-history)
+         pairs)))
 
 ;;;###autoload
 (defun maildir-list (mail-dir &optional clear)
