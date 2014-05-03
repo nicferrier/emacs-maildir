@@ -959,7 +959,8 @@ set to the list of overlays that isearch found."
     (define-key maildir-mode-map "g" 'maildir-refresh)
     (define-key maildir-mode-map "m" 'maildir-move)
     (define-key maildir-mode-map "+" 'maildir-make-new)
-    (setq maildir-mode/keymap-initialized-p t)))
+    (setq maildir-mode/keymap-initialized-p t))
+  (hl-line-mode t))
 
 (defun maildir-find-file ()
   "Find the message file at point."
