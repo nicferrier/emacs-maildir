@@ -85,13 +85,11 @@ Presumes `maildir/imap-connection' is made."
 (defvar maildir/imap-log nil
   "The log buffer used for when we're not doing actual pulling.")
 
-(defun maildir/imap-message (msg)
-  "Fetch a single MSG over IMAP."
+(defun maildir/imap-message (msg maildir)
+  "Fetch a single MSG over IMAP into the \"new\" folder."
   (with-temp-buffer ; (get-buffer-create "*imapscratch*")
-    (destructuring-bind (file filename)
-        (maildir/new-filename maildir-mail-dir)
-      (let ((new-filename
-             (maildir/new-file maildir-mail-dir filename))
+    (destructuring-bind (file filename) (maildir/new-filename maildir)
+      (let ((new-filename (maildir/new-file maildir filename))
             (coding-system-for-write 'no-conversion)
             (msg-uid (imap-fetch
                       msg "(RFC822 UID FLAGS)" 'UID nil
@@ -137,7 +135,9 @@ be done and display it."
       (maildir/imap-check-connect)
       (let ((maildir/imap-log (get-buffer-create "*maildir-imap-log*"))
             (maildir/imap-message-doit doit))
-        (mapcar 'maildir/imap-message (maildir/imap-search)))))
+        (mapcar (lambda (msg)
+                  (maildir/imap-message msg maildir-mail-dir))
+                (maildir/imap-search)))))
 
 ;;(maildir/imap-sync "~/mymaildir/var/maildir/nferrier")
 
