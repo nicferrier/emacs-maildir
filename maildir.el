@@ -680,8 +680,9 @@ The HOW, if present, is treated as a shell command and executed."
                  (buffer-read-only nil))
             (when encoding
               (condition-case err
-                  (decode-coding-region end-of-header (point-max)
-                                        (intern (downcase encoding)))
+                  (decode-coding-region
+                   end-of-header (point-max)
+                   (intern (downcase encoding)))
                 (error
                  (message
                   (concat "maildir/message-open-inlineable-part "
