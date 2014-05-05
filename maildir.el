@@ -380,7 +380,7 @@ in which case it expects to `read' the HEADER-ALIST at point."
       (goto-char (point-max))
       (insert
        (propertize
-        (format "%s %s" (current-time-string) message)
+        (format "%s %s\n" (current-time-string) message)
         :msg-filebame filename)))))
 
 (defun maildir-index (mail-dir &optional field-symbols)
