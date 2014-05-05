@@ -23,7 +23,7 @@ We do this to preserve the i-node of the created file."
   (destructuring-bind (bigtime littletime)
       (split-string (format "%f" (float-time)) "\\.")
     (let ((name (make-temp-name (file-name-directory maildir))))
-      (with-temp-file name)
+      (with-temp-file name) ; make an empty file
       (list
        name
        (format
