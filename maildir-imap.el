@@ -2,6 +2,7 @@
 
 (require 'imap)
 (require 'kva)
+(require 'maildir)
 
 (defcustom maildir/imap-source nil
   "An IMAP source for pulling mails from."
