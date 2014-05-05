@@ -91,29 +91,21 @@ Presumes `maildir/imap-connection' is made."
     (destructuring-bind (file filename) (maildir/new-filename maildir)
       (let ((new-filename (maildir/new-file maildir filename))
             (coding-system-for-write 'no-conversion)
-            (msg-uid (imap-fetch
-                      msg "(RFC822 UID FLAGS)" 'UID nil
-                      maildir/imap-connection)))
+            (msg-uid (imap-fetch msg "(RFC822 UID FLAGS)" 'UID nil
+                                 maildir/imap-connection)))
         (unless (member "\\Seen"
-                        (imap-message-get
-                         msg-uid 'FLAGS maildir/imap-connection))
-          (insert (imap-message-get
-                   msg-uid 'RFC822 maildir/imap-connection))
+                        (imap-message-get msg-uid 'FLAGS maildir/imap-connection))
+          (insert (imap-message-get msg-uid 'RFC822 maildir/imap-connection))
           ;; And mark it seen
           (imap-message-flags-add (number-to-string msg-uid)
                                   "SEEN" t maildir/imap-connection)
           (if (not maildir/imap-message-doit) ; debug mode, quite useful
-              (let* ((hdr (progn
+              (let* ((hdr (save-excursion
                             (goto-char (point-min))
                             (mail-header-extract)))
-                     (log-msg 
-                      (format "%s from %s with %s\n"
-                              (kva 'subject hdr)
-                              (kva 'from hdr)
-                              (imap-message-get msg-uid 'FLAGS maildir/imap-connection))))
-                (with-current-buffer maildir/imap-log
-                  (insert log-msg)))
-              ;; Else really do it
+                     (uid (imap-message-get msg-uid 'FLAGS maildir/imap-connection)))
+                (maildir/log hdr new-filename (format "got %s from IMAP" uid)))
+              ;; Else really save the message in the new file, preserving the i-node
               (rename-file file new-filename)
               (write-file new-filename)))))))
 
