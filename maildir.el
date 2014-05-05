@@ -352,6 +352,14 @@ verifies as non-spam or not."
       if (memq hdr-name maildir-default-index-field-syms)
       collect (maildir/index-header-parse hdr-name hdr-value file))))
 
+
+(defvar maildir/verify-check-spam-header t
+  "We can turn off the spam header check here.
+
+Let bind this to `nil' around `maildir-verify-header' to do that.
+This can be useful if, for example, you want to list the spam
+messages.")
+
 (defun maildir-verify-header (header-alist)
   "Verify HEADER-ALIST with a bunch of rules.
 
@@ -360,10 +368,11 @@ in which case it expects to `read' the HEADER-ALIST at point."
   (interactive (list (save-excursion (read (current-buffer)))))
   (let ((verified
          (and
-          (not  ; the main marked spam detection rule
-           (equal
-            (upcase
-             (or (cdr-safe (assq 'x-junk header-alist)) "")) "SPAM"))
+          (and maildir/verify-check-spam-header
+               (not  ; the main marked spam detection rule
+                (equal
+                 (upcase
+                  (or (cdr-safe (assq 'x-junk header-alist)) "")) "SPAM")))
           (assq 'date header-alist)
           (or
            (assq 'to header-alist)
