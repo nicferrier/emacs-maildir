@@ -38,6 +38,7 @@
 (require 'noflet)
 (require 's)
 (require 'dash)
+(require 'maildir-index)
 
 (defgroup maildir nil
   "The Maildir mail user agent application."
