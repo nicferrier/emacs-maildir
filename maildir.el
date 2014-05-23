@@ -379,9 +379,10 @@ in which case it expects to `read' the HEADER-ALIST at point."
            (assq 'to header-alist)
            (assq 'x-original-to header-alist))
           (assq 'from header-alist))))
-    (when (called-interactively-p 'interactive)
-      (message "verified? %s" verified))
-    verified))
+    (if (called-interactively-p 'interactive)
+        (message "verified? %s" verified)
+        ;; Else
+        verified)))
 
 (defun maildir/log (hdr filename message)
   "Log the specified message to the maildir log."
