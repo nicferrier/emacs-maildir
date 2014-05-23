@@ -494,7 +494,7 @@ Each value is a number."
       (goto-char l)
       (let ((kill-whole-line t)
             (buffer-read-only nil))
-        (kill-line)))
+        (delete-region (line-beginning-position) (+ 1 (line-end-position)))))
     (let ((new-point (+ (point) (- p l))))
       (if (> new-point (line-end-position))
           (goto-char (line-end-position))
