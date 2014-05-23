@@ -9,5 +9,6 @@
   (pipe "0.0.1"))
  :files
  ("maildir.el"
+  "maildir-index.el"
   "maildir-imap.el"
   "maildir-message-handlers.el"))
