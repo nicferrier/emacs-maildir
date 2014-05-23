@@ -26,8 +26,6 @@
 
 ;;; Code:
 
-(require 'pipe)
-
 (defun maildir-index/find (maildir-cache-dir days text-filter)
   ;; if we preserve the ctime of the mails then we have a good way to
   ;; filter  with find
@@ -42,30 +40,48 @@
    days
    text-filter))
 
+(defun shell-command-through (command func)
+  (let* ((name (generate-new-buffer-name "*shell-command-through*"))
+         (proc (start-process-shell-command name name command)))
+    (set-process-filter
+     proc
+     (lambda (p data)
+       (with-current-buffer (process-buffer p)
+         (save-excursion
+           (goto-char (point-min))
+           (insert data)
+           (goto-char (point-max))
+           (when (re-search-backward "\n" nil t)
+             (unwind-protect
+                  (mapc func (split-string (buffer-substring (point-min) (point)) "\n"))
+               (delete-region (point-min) (point))))))))))
+
 ;;;###autoload
-(defun* maildir-index-make (folder-name term &key (days 10))
-  "Make FOLDER-NAME an index of TERM in `maildir-mail-dir'. 
+(defun* maildir-index-make (folder-name term &key (days 10) maildir)
+  "Make FOLDER-NAME an index of TERM in MAILDIR. 
 
 DAYS old maildir files are searched for TERM.
 
-If FOLDER-NAME exists just pull new files into it."
+If FOLDER-NAME exists just pull new files into it.
+
+If MAILDIR is not specified then `maildir-mail-dir' is used."
   ;; TODO we need a refresh option? to delete all the files in the folder
   (interactive
    (let ((reads 
           (list (read-from-minibuffer "index mail-dir name: ")
                 (read-from-minibuffer "index search term: "))))
      (if current-prefix-arg
-         (append reads (list :days (string-to-number
-                                    (read-from-minibuffer "days to index: "))))
+         (append reads
+                 (list :days (string-to-number
+                              (read-from-minibuffer "days to index: "))))
          reads)))
-  (maildir-make-new folder-name)
-  (let ((cmd (maildir-index/find
-              (maildir/home maildir-mail-dir "cache") days term))
-        collected-files)
-    (pipe cmd
-      (catch :eof
-        (apply 'maildir-link
-             `(,maildir-mail-dir ,folder-name ,@(pipe-read)))))))
+  (unless maildir (setq maildir (or maildir/buffer-mail-dir maildir-mail-dir)))
+  (maildir/new-maildir folder-name maildir)
+  (shell-command-through
+   (maildir-index/find (maildir/home maildir "cache") days term)
+   (lambda (line)
+     (unless (equal line "")
+       (maildir-link maildir folder-name line)))))
 
 (provide 'maildir-index)
 
