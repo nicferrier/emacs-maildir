@@ -970,6 +970,7 @@ set to the list of overlays that isearch found."
     (define-key maildir-mode-map "g" 'maildir-refresh)
     (define-key maildir-mode-map "m" 'maildir-move)
     (define-key maildir-mode-map "+" 'maildir-make-new)
+    (define-key maildir-mode-map "I" 'maildir-index-make)
     (setq maildir-mode/keymap-initialized-p t))
   (hl-line-mode t))
 
