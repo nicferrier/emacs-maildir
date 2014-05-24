@@ -8,7 +8,7 @@
   (noflet "0.0.8")
   (pipe "0.0.1"))
  :files
- ("maildir.el"
-  "maildir-index.el"
+ ("maildir-index.el"
+  "maildir.el"
   "maildir-imap.el"
   "maildir-message-handlers.el"))
