@@ -45,7 +45,7 @@
   :group 'applications)
 
 (defcustom maildir-default-index-field-syms
-  '(to from date subject x-junk)
+  '(to x-original-to from date subject x-junk)
   "The default list of field symbols for the indexer."
   :group 'maildir
   :type 'sexp)
@@ -366,7 +366,8 @@ messages.")
 
 An attempt to filter obvious spam.  Can be called interactively
 in which case it expects to `read' the HEADER-ALIST at point."
-  (interactive (list (save-excursion (read (current-buffer)))))
+  (interactive
+   (list (maildir/file->header (buffer-file-name))))
   (let ((verified
          (and
           (and maildir/verify-check-spam-header
@@ -383,6 +384,16 @@ in which case it expects to `read' the HEADER-ALIST at point."
         (message "verified? %s" verified)
         ;; Else
         verified)))
+
+(defun maildir-check-file (filename)
+  (interactive (list (read-file-name "filename: ")))
+  (with-current-buffer (get-buffer-create (format "*maildir-validate-%s*" filename))
+    (erase-buffer)
+    (let ((headers (maildir/index-header filename)))
+      (print (pp-to-string headers) (current-buffer))
+      (print (maildir-verify-header headers) (current-buffer)))
+    (pop-to-buffer (current-buffer))))
+
 
 (defun maildir/log (hdr filename message)
   "Log the specified message to the maildir log."
