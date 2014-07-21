@@ -155,8 +155,10 @@ Optionally return the SUB as well."
 (defun maildir/folder-list (&optional maildir)
   "List the folders under MAILDIR or `maildir-mail-dir'."
   (mapcar
-   'maildir/directory->pair
-   (maildir/list-maildirs (or maildir maildir-mail-dir))))
+    'maildir/directory->pair   
+    (-filter
+     'identity
+     (maildir/list-maildirs (or maildir maildir-mail-dir)))))
 
 
 (defun maildir/file-name->mail (filename &optional do-info extra-info)
