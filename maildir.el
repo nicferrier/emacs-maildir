@@ -265,51 +265,13 @@ Optionally return the SUB as well."
   (when (file-exists-p (concat mail-dir "/pull"))
     (maildir/pull mail-dir)))
 
-(defun maildir/base-split-string (string &optional separators omit-nulls)
-  "Copy of Emacs split-string allowing us to use it overridden."
-  (let ((keep-nulls (not (if separators omit-nulls t)))
-	(rexp (or separators split-string-default-separators))
-	(start 0)
-	notfirst
-	(list nil))
-    (while (and (string-match rexp string
-			      (if (and notfirst
-				       (= start (match-beginning 0))
-				       (< start (length string)))
-				  (1+ start) start))
-		(< start (length string)))
-      (setq notfirst t)
-      (if (or keep-nulls (< start (match-beginning 0)))
-	  (setq list
-		(cons (substring string start (match-beginning 0))
-		      list)))
-      (setq start (match-end 0)))
-    (if (or keep-nulls (< start (length string)))
-	(setq list
-	      (cons (substring string start)
-		    list)))
-    (nreverse list)))
-
-(defun maildir/split-string (sep-rx str &optional match-group)
-  "Split STR with SEP-RX optionally narrowing to MATCH-GROUP.
-
-Eg:
-
-  (split-string \"\\(\n\\)[^ ]\" line 1)
-
-might split on line ending not followed by space, but the
-resulting lines will still have whatever character matched the
-not-space."
-  (let ((to-match (or match-group 0)))
-    (noflet ((match-beginning (x)
-               (if (equal x 0)
-                   (funcall this-fn to-match)
-                   (funcall this-fn x)))
-             (match-end (x)
-               (if (equal x 0)
-                   (funcall this-fn to-match)
-                   (funcall this-fn x))))
-      (maildir/base-split-string str sep-rx))))
+(defun maildir/header-split (str)
+  "Split the header STR into a list."
+  (let ((pt (string-match "\\(\n\\)\\(?:[^\r\t ]\\)" str)))
+    (when pt
+      (cons
+       (substring str 0 pt)
+       (maildir/header-split (substring str (+ 1 pt)))))))
 
 (defun maildir/parse-header (buffer)
   "Parse a header in the BUFFER."
@@ -318,10 +280,11 @@ not-space."
       (goto-char (point-min))
       (let* ((eoh (save-excursion
                     (re-search-forward "\n\n" nil t)))
-             (lines 
-              (maildir/split-string
-               "\\(\n\\)\\(?:[^\r\t ]\\)"
-               (buffer-substring (point) eoh) 1)))
+             (lines
+              ;; Split the string at proper header ends which is line
+              ;; ends NOT followed by a line starting with spaces
+              (maildir/header-split
+               (buffer-substring (point) eoh))))
         (-keep (lambda (s)
                  (save-match-data
                    (when (string-match "\\([^:]+\\):\\(.*\\)" s)
