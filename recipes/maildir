@@ -1,6 +1,6 @@
 (maildir
  :doc "Simple maildir based MUA."
- :version "0.0.27"
+ :version "0.0.28"
  :requires
  ((kv "0.0.17")
   (dash "2.3.0")
