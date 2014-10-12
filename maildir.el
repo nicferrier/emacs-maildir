@@ -812,7 +812,8 @@ This is probably bad but we should still read them."
     (set-buffer-modified-p nil)
     (let ((encoding (or (kva 'charset content-type)
                         (cdr (cadr content-type))))
-          (buffer-read-only nil))
+          (buffer-read-only nil)
+          (handle (mm-dissect-buffer)))
       ;; Not sure whether to mark the region encoded so we don't have
       ;; to do it again
       (when encoding
@@ -821,6 +822,10 @@ This is probably bad but we should still read them."
              end-of-header-point (point-max)
              (intern (downcase encoding)))
           (error (message "maildir/display-inline encode error -- %S" err))))
+      (when (and handle (mm-inlinable-p handle))
+        (delete-region end-of-header-point (point-max))
+        (goto-char end-of-header-point)
+        (mm-display-inline handle))
       (maildir/linkize (current-buffer)))))
 
 (defun maildir/flatten-parts (part)
