@@ -57,7 +57,7 @@
                (delete-region (point-min) (point))))))))))
 
 ;;;###autoload
-(defun* maildir-index-make (folder-name term &key (days 10) maildir)
+(cl-defun maildir-index-make (folder-name term &key (days 10) maildir)
   "Make FOLDER-NAME an index of TERM in MAILDIR. 
 
 DAYS old maildir files are searched for TERM.
