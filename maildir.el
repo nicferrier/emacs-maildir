@@ -39,6 +39,7 @@
 (require 's)
 (require 'dash)
 (require 'maildir-index)
+(require 'maildir-notmuch)
 
 (defgroup maildir nil
   "The Maildir mail user agent application."
@@ -953,6 +954,7 @@ set to the list of overlays that isearch found."
     (define-key maildir-mode-map "m" 'maildir-move)
     (define-key maildir-mode-map "+" 'maildir-make-new)
     (define-key maildir-mode-map "I" 'maildir-index-make)
+    (define-key maildir-mode-map "i" 'maildir-notmuch-lookup)
     (setq maildir-mode/keymap-initialized-p t))
   (hl-line-mode t))
 
