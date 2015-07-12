@@ -33,20 +33,24 @@
 
 (defun maildir-index/match-msg (msg)
   (match msg
-    ((list (list nil)) (list)) ; when there's an error we get this
+    ((list
+      (list nil)) (list)) ; when there's an error we get this
     ((list
       (list
        (plist :filename filename
               :headers (plist :Subject subject
                               :From from
                               :To to
-                              :Date date)) _))
+                              :Date date))
+       _))
      (list
       (cons "filename" filename)
       (cons "subject" subject)
       (cons "from" from)
       (cons "to" to)
-      (cons "date" date)))))
+      (cons "date" date)))
+    (_ (list))) ; another error condition
+  )
 
 (defun maildir-index/match-msg-test ()
   (let ((example
@@ -59,6 +63,7 @@
              (:Subject "You have received a new secure message from BankLine"
                        :From "Bankline <secure.message@business.natwest.com>"
                        :To "administrator@ferrier.me.uk" :Date "Fri, 06 Mar 2015 11:58:30 +0100"))
+            
             nil))))
     (maildir-index/match-msg example)))
 
