@@ -481,6 +481,30 @@ Each value is a number."
           (goto-char new-point)))
     (delete-file filename)))
 
+(defun maildir-rm-many (&rest filenames)
+  "For the isearch interface to delete messages."
+  (interactive
+   (let* ((search-str isearch-string)
+          (case-fold-search t)
+          filenames)
+     (with-isearch-suspended
+         (save-excursion
+           (while (re-search-forward search-str nil t)
+             (setq filenames
+                   (cons
+                    (get-text-property (point) :filename)
+                    filenames)))))
+     filenames))
+  (when filenames
+    (mapc
+     (lambda (filename)
+       (condition-case err
+           (delete-file filename)
+         (error nil)))
+     filenames)
+    (maildir-list maildir-mail-dir)
+    (message "maildir rm done")))
+
 (defun maildir-rm-and-spam (filename)
   "Remove FILENAME but mark is as spam first."
   (interactive
@@ -929,7 +953,9 @@ set to the list of overlays that isearch found."
     (setq maildir/isearch-keymap (make-sparse-keymap))
     (set-keymap-parent maildir/isearch-keymap isearch-mode-map)
     (define-key maildir/isearch-keymap (kbd "M-m")
-      (maildir/isearch-caller 'maildir-move)))
+      (maildir/isearch-caller 'maildir-move))
+    (define-key maildir/isearch-keymap (kbd "M-k")
+      (maildir/isearch-caller 'maildir-rm-many)))
   (setq overriding-terminal-local-map maildir/isearch-keymap))
 
 (defvar maildir-mode/keymap-initialized-p nil
