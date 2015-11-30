@@ -46,7 +46,7 @@
   :group 'applications)
 
 (defcustom maildir-default-index-field-syms
-  '(to x-original-to from date subject x-junk)
+  '(to x-original-to from date subject x-junk x-beenthere)
   "The default list of field symbols for the indexer."
   :group 'maildir
   :type 'sexp)
@@ -441,7 +441,10 @@ Each value is a number."
     (propertize
      (maildir/format-date (maildir/parse-date (cdr (assq 'date hdr-alist))))
      'face 'message-header-other)
-    (let* ((from (cadr (assq 'from hdr-alist)))
+    (let* ((from (if (assq 'x-beenthere hdr-alist)
+                     (list (cons 'address (kva 'x-beenthere hdr-alist)))
+                     ;; else it's the from address
+                     (cadr (assq 'from hdr-alist))))
            (addr (kva 'address from))
            (existing-color (gethash (downcase addr) maildir/from-colors))
            (color (if existing-color
