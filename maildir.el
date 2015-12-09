@@ -216,19 +216,10 @@ Optionally return the SUB as well."
            (make-symbolic-link cache-file cur-file)
            cur-file))))
 
-(defun maildir/pull (maildir)
+(defun maildir/pull-filelist (maildir str)
   "Base function for pulling maildir."
   (let* ((filelist
-          (loop for filename in
-               (split-string
-                ;; Would prefer to do this async
-                (shell-command-to-string
-                 ;; FIXME doesn't find just new - needs to.
-                 (format "ssh %s find %s -type f -ctime -%d"
-                         maildir-remote-host
-                         (file-name-as-directory maildir-remote-maildir)
-                         maildir-remote-days))
-                "\n")
+          (loop for filename in (split-string str "\n")
              when (string-match
                    (format "^%s\\(/.*\\)" maildir-remote-maildir)
                    filename)
@@ -248,14 +239,49 @@ Optionally return the SUB as well."
       (--each new-mails (insert (format "%s\n" it)))
       (save-buffer))
     ;; Rsync the filelist to the maildir/new - Would prefer to do this async
-    (shell-command-to-string
-     (format
-      "rsync -av --files-from=/tmp/maildircp -e ssh %s:%s %s"
-      maildir-remote-host
-      maildir-remote-maildir
-      maildir-mail-dir))
-    ;; Returns the list of new files
-    (maildir-import-new maildir)))
+    (let ((rsync-proc
+           (start-process-shell-command
+            "*maildir-rsync-proc*"
+            (prog1 (get-buffer-create "*maildir-rsync-proc*")
+              (with-current-buffer "*maildir-rsync-proc*"
+                (erase-buffer)))
+            (format
+             "rsync -av --files-from=/tmp/maildircp -e ssh %s:%s %s"
+             maildir-remote-host
+             maildir-remote-maildir
+             maildir-mail-dir))))
+      (set-process-sentinel
+       rsync-proc
+       (lambda (proc evt)
+         (message "maildir/pull-filelist evt>%s" evt)
+         (when (string-match-p "finished.*" evt)
+           ;; Returns the list of new files
+           (maildir-import-new maildir))))
+      (display-buffer "*maildir-rsync-proc*"'display-buffer-use-some-window))))
+
+(defun maildir/pull (maildir)
+  "Async version of `maidir/pull'. 
+
+First runs find on the remote box with ssh and then calls
+`maildir/pull-filelist' with the results of that when it's done."
+  (let ((proc
+         (start-process-shell-command
+          "*maildir-pull-files*"
+          (prog1 (get-buffer-create "*maildir-pull-files*")
+            (with-current-buffer "*maildir-pull-files*"
+              (erase-buffer)))
+          ;; FIXME doesn't find just new - needs to.
+          (format "ssh %s find %s -type f -ctime -%d"
+                  maildir-remote-host
+                  (file-name-as-directory maildir-remote-maildir)
+                  maildir-remote-days))))
+    (set-process-sentinel
+     proc
+     (lambda (proc evt)
+       (when (string-match-p "finished.*" evt)
+         (let ((str (with-current-buffer (process-buffer proc) (buffer-string))))
+           (maildir/pull-filelist maildir str)))))
+    (display-buffer "*maildir-pull-files*" 'display-buffer-use-some-window)))
 
 ;;;###autoload
 (defun maildir-pull (mail-dir)
