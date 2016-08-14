@@ -211,9 +211,16 @@ Optionally return the SUB as well."
                 (cache-file (concat cache base))
                 (cur-file (concat cur cur-base)))
            ;; First move the new file to the cache
-           (rename-file filename cache-file)
-           ;; then symlink it into cur
-           (make-symbolic-link cache-file cur-file)
+           (condition-case err
+               (unless (file-exists-p cache-file)
+                 (rename-file filename cache-file))
+             (error
+              (delete-file filename)
+              (message "maildir-import-new caught an error on %s" cache-file)))
+           (condition-case err
+               ;; then symlink it into cur
+               (make-symbolic-link cache-file cur-file)
+             (error (message "maildir-import-new couldn't symlink %s because it exists" cache-file)))
            cur-file))))
 
 (defun maildir/pull-filelist (maildir str)
@@ -256,7 +263,8 @@ Optionally return the SUB as well."
          (message "maildir/pull-filelist evt>%s" evt)
          (when (string-match-p "finished.*" evt)
            ;; Returns the list of new files
-           (maildir-import-new maildir))))
+           (maildir-import-new maildir)
+           (maildir-list maildir))))
       (display-buffer "*maildir-rsync-proc*"'display-buffer-use-some-window))))
 
 (defun maildir/pull (maildir)
